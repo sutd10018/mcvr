@@ -13,50 +13,45 @@
 	body,h1 {font-family: "Raleway", sans-serif}
 	body, html {height: 100%}
 	.bgcolor {
-		height: 100vh;
+		height: 100%;
 		background: rgb(22,73,125);
 		background: linear-gradient(90deg, rgba(22,73,125,1) 0%, rgba(11,11,38,1) 50%, rgba(22,73,125,1) 100%);
 		align: center;
 	}
 </style>
 </head>
-<body>
-<div id="bgcolor">
+<body id="bgcolor">
 
-  <div class="bgcolor w3-display-container w3-animate-opacity w3-text-white">
-  <div class="w3-display-middle">
-    <h1 class="w3-xxxlarge w3-animate-top w3-center">Multivariable Calculus in VR</h1>
-	<h2 class="w3-xxlarge w3-animate-top w3-center">10.018 Modelling Space and Systems</h2>
-    <hr class="w3-border-grey" style="margin:auto">
-	<p class="w3-center">Please choose the modules to guide your class activities with visualisation:</p>
-	<div class="w3-row-padding">
-		<div class="w3-col m2 l4">
-			<p><button onclick="myFunction('contours')" class="w3-button w3-block w3-black w3-left-align">Contours</button></p>
-			<div id="contours" class="w3-hide">
-				<a class="w3-button w3-block w3-left-align" href="modules/contours-v1.html" target="_blank">v1 - Z-plane intersection</a>
-				<a class="w3-button w3-block w3-left-align" href="modules/contours-v2.html" target="_blank">v2 - top view</a>
+<div class="bgcolor w3-container w3-animate-opacity w3-text-white">
+	<div class="w3-display-middle" style="width:80%">
+		<h1 class="w3-xxxlarge w3-center">Multivariable Calculus in VR</h1>
+		<h2 class="w3-xxlarge w3-center">10.018 Modelling Space and Systems</h2>
+		<hr class="w3-border-grey" style="margin:auto">
+		<p class="w3-center">Please choose the modules to guide your class activities with visualisation:</p>
+		<div class="w3-row-padding">
+			<div class="w3-col w3-third">
+				<p><button onclick="myFunction('contours')" class="w3-button w3-block w3-black">Contours</button></p>
+				<div id="contours" class="w3-hide">
+					<a class="w3-button w3-block" href="modules/contours-v1.html" target="_blank">v1 - Z-plane intersection</a>
+					<a class="w3-button w3-block" href="modules/contours-v2.html" target="_blank">v2 - top view</a>
+				</div>
+			</div>
+			<div class="w3-col w3-third">
+				<p><a class="w3-button w3-block w3-black" href="modules/partialderivatives.html" target="_blank">Partial Derivatives</a></p>
+			</div>
+			<div class="w3-col w3-third">
+				<p><a class="w3-button w3-block w3-black" href="modules/directionalderivatives.html" target="_blank">Directional Derivatives</a></p>
 			</div>
 		</div>
-		<div class="w3-col m2 l4">
-			<p><a class="w3-button w3-block w3-black w3-left-align" href="modules/partialderivatives.html" target="_blank">Partial Derivatives</a></p>
+		<div class="w3-row-padding">
+			<div class="w3-col w3-third">
+				<p><a class="w3-button w3-block w3-black" href="modules/chainrule.html" target="_blank">Multivariable Chain Rule</a></p>
+			</div>
 		</div>
-		<div class="w3-col m2 l4">
-			<p><a class="w3-button w3-block w3-black w3-left-align" href="modules/directionalderivatives.html" target="_blank">Directional Derivatives</a></p>
-		</div>
+		<br>
+		<hr class="w3-border-grey" style="margin:auto">
+		<br>
 	</div>
-	<div class="w3-row-padding">
-		<div class="w3-col m2 l4">
-			<p><a class="w3-button w3-block w3-black w3-left-align" href="modules/chainrule.html" target="_blank">Mv Chain Rule</a></p>
-		</div>
-	</div>
-	<br>
-	<hr class="w3-border-grey" style="margin:auto">
-	<br>
-
-
-  </div>
-  
-</div>
 </div>
   
 <script>
