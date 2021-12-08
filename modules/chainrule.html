@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Multivariable Chain Rule</title>
+  
+	<!-- modified from https://github.com/unconed/mathbox -->
+  <script src="js/mathbox-bundle.js"></script>
+  <script src="js/dat.gui.js"></script>
+  
+  <!-- http://silentmatt.com/javascript-expression-evaluator/ -->
+  <script src="js/parser.js"></script>
+  
+  <!-- https://mathjs.org/ -->
+  <script src="js/math.js"></script>
+
+  <link rel="stylesheet" href="css/mathbox.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <style>
+	#bgcolor {
+		height: 97vh;
+		background: rgb(22,73,125);
+		background: linear-gradient(90deg, rgba(22,73,125,1) 0%, rgba(11,11,38,1) 50%, rgba(22,73,125,1) 100%);
+		align: center;
+	}
+	</style>
+</head>
+
+
+<body>
+<div id="bgcolor">
+
+  <script>
+ 
+	<!-- START OF SCENE SETUP ==================================================================== -->
+	// includes mathbox VR setup, axes, and graph color settings
+	
+	var element =  document.querySelector('#bgcolor'); //place the graph within custom Div
+	
+	var mathbox = mathBox({ element: element,
+      plugins: ['VR', 'ui', 'controls'],
+      controls: {
+        klass: THREE.VRControls
+      },
+    });
+    if (mathbox.fallback) throw "WebGL not supported"
+	
+	// setting proxy:true allows interactive controls to override base position
+	var camera = mathbox.camera( { proxy: true, position: [4,2,4] } );
+	
+	
+	// set the boundaries/scale of the graph display
+	// zMin & zMax values are just placeholder, they would be replaced in later function if autofit is true
+	var	xMin = -8, xMax = 8, yMin = -8,	yMax = 8, zMin = -10, zMax = 10;
+	
+    var view = mathbox.cartesian(
+	  {
+        range: [[xMin, xMax], [yMin, yMax], [zMin,zMax]],
+		//scale for y axis - here in z, should be negative since original mathbox yAxis (on z) is flipped
+        scale: [2,1,-2],
+      }
+	);
+
+	<!-- Axis settings -->
+	var xAxis = view.axis( {axis: 1, width: 8, detail: 40, color:"deeppink"} );
+    var xScale = view.scale( {axis: 1, divide: xMax, nice:true, zero:true} );
+    var xTicks = view.ticks( {width: 5, size: 15, color: "deeppink", zBias:2} );
+    var xFormat = view.format( {digits: 2, font:"Helvetica", style: "normal", source: xScale} );
+    var xTicksLabel = view.label( {color: "deeppink", zIndex: 0, offset:[0,-20], outline: 0, size: 14, points: xScale, text: xFormat} );
+	
+	var yAxis = view.axis( {axis: 3, width: 8, detail: 40, color:"greenyellow"} );
+    var yScale = view.scale( {axis: 3, divide: yMax, nice:true, zero:false} );
+    var yTicks = view.ticks( {width: 5, size: 15, color: "greenyellow", zBias:2} );
+    var yFormat = view.format( {digits: 2, font:"Helvetica", style: "normal", source: yScale} );
+    var yTicksLabel = view.label( {color: "greenyellow", zIndex: 0, offset:[-20,0], outline: 0, size: 14, points: yScale, text: yFormat} );
+	
+	var zAxis = view.axis( {axis: 2, width: 8, detail: 40, color:"cyan"} );
+    var zScale = view.scale( {axis: 2, divide: zMax, nice:true, zero:false} );
+    var zTicks = view.ticks( {width: 5, size: 15, color: "cyan", zBias:2} );
+    var zFormat = view.format( {digits: 2, font:"Helvetica", style: "normal", source: zScale} );
+    var zTicksLabel = view.label( {color: "cyan", zIndex: 0, offset:[20,0], outline: 0, size: 14, points: zScale, text: zFormat} );
+	
+	// axis end labels
+	var xLabelText = view.text( {width:1, data:["x"], font: "Helvetica", style: "normal"} );
+	var xLabelPoint = view.array( {width:1, channels:3, data:[ [xMax,0,0] ]} );
+	var xLabelDisplay = view.label( {text: xLabelText, points: xLabelPoint,
+      size: 18, color: "deeppink", outline: 0, offset: [20, 10], zIndex: 1} );
+	  
+	var yLabelText = view.text( {width:1, data:["y"], font: "Helvetica", style: "normal"} );
+	var yLabelPoint = view.array( {width:1, channels:3, data:[ [0,0,yMax] ]} );
+	var yLabelDisplay = view.label( {text: yLabelText, points: yLabelPoint,
+      size: 18, color: "greenyellow", outline: 0, offset: [-10, 20], zIndex: 1} );
+	  
+	// view semi-transparent grid at z=0
+	view.grid( {axes:[1,3], width: 0.5, divideX: 20, divideY: 20, opacity:0.1} );
+	
+	 
+	<!-- graph Color setting -->
+	var graphData = view.area({
+		axes: [1,3], channels: 3, width: 64, height: 64,
+        expr: function (emit, x, y, i, j, t)
+		{
+		  var z = x*y;
+          emit( x, z, y );
+        },
+    });
+	
+	// actual emitter set in displayGraph function
+	var graphColors = view.area({
+		expr: function (emit, x,y, i,j, t) 
+		{
+			if (x < 0)
+				emit(1.0, 0.0, 0.0, 1.0);
+		    else
+				emit(0.0, 1.0, 0.0, 1.0);
+		},
+		axes: [1,3],
+		width:  64, height: 64,
+		channels: 4, // RGBA
+    });
+	
+	var graphViewSolid = view.surface({
+		points:graphData, 
+		color:"#FFFFFF", shaded:false, fill:true, lineX:false, lineY:false, colors:graphColors, visible:true, width:0
+	});
+	
+	<!-- END OF SCENE SETUP ============================================================= -->
+	
+	<!-- START OF DISPLAY GRAPH SETTING ==================================================== -->
+	// to display the basic graph
+	 
+	var functionText = "((x^2)*y)+((y^2)*x)"; // the function to parse
+	
+	// set display range
+
+	var zAutofit = true;
+	
+	var displayGraphFunc = function() 
+	{ 
+		var f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
+		
+		graphData.set("expr", 
+		    function (emit, x, y, i, j, time) 
+			{ 
+			    emit( x, f(x,y), y );
+			}
+		);
+		
+		//autofit the scale of the graph so it fits to the screen nicely
+		if (zAutofit)
+		{
+			var xStep = (xMax - xMin) / 256;
+			var yStep = (yMax - yMin) / 256;
+			var zSmallest = f(xMin, yMin);
+			var zBiggest  = f(xMax, yMax);
+
+			//for every possible x & combination, find the smallest & biggest z values
+			//infinity check is a must, otherwise when the equation results in infinity (eg divide by zero) then the graph cannot be plotted
+			//when the z value is infinite, we can assign our own value to scale the graph nicely (this is optional)
+
+			for (var x = xMin; x <= xMax; x += xStep)
+			{
+				for (var y = yMin; y <= yMax; y += yStep)
+				{
+					var z = f(x,y);
+					if (z <= zSmallest && isFinite(z) == true){
+						zSmallest = z;
+					} else if (z <= zSmallest && isFinite(z) == false){ //optional
+						zSmallest = -256; //it can be any number since it's infinite
+					}
+
+					if (z >= zBiggest && isFinite(z) == true) {
+						zBiggest = z;
+					} else if (z >= zBiggest && isFinite(z) == false){ //optional
+						zBiggest = 256; //it can be any number since it's infinite
+					}
+				}
+			}
+
+			// change the global zMin var value to follow the smallest possible z val and
+			// global zMax var value to follow the biggest possible z val
+			zMin = zSmallest;
+			zMax = zBiggest;
+		}
+		
+	
+		view.set("range", [[xMin, xMax], [zMin,zMax], [yMin, yMax]]); 
+		
+		//set the graph color to greenish hue
+		graphColors.set("expr", 
+				function (emit, x, y, i, j, time) 
+				{ 
+					var z = f(x,y);
+					var percent = (z - zMin) / (zMax - zMin);
+					emit( percent*0.6, percent, percent, 0.8 );
+				}
+			);	
+		
+		displadyDerivativesFunc();
+	}
+	
+	<!-- END OF DISPLAY GRAPH SETTING ===================================================== -->
+   
+   
+   <!-- START OF DISPLAY DERIVATIVES SETTING ===================================================== -->
+
+	var xPoint, yPoint, zPoint; //vars for x0, y0, f(x0,y0)
+
+	var t = 1;
+	var xtFunctionText = "t^2";
+	var ytFunctionText = "t^3";
+	
+	
+	var displadyDerivativesFunc = function ()
+	
+	{
+		f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
+		
+		var xtFunc = Parser.parse( xtFunctionText ).toJSFunction( ['t'] );
+		var ytFunc = Parser.parse( ytFunctionText ).toJSFunction( ['t'] );
+		
+		//set the point to reflect x and y functions of t
+		xPoint = xtFunc(t); //x0 = x(t0)
+		yPoint = ytFunc(t); //y0 = y(t0)
+		zPoint = f(xPoint, yPoint); //f(x0,y0) = f(x(t0),y(t0))
+		originPointData.set("data", [ [xPoint, zPoint, yPoint] ] );
+		
+		// set the point label data
+		var pointXDisp = Math.round(xPoint * 100) / 100; //rounded to 2 decimals for better view
+		var pointYDisp = Math.round(yPoint * 100) / 100;
+		pointDataText.set( "data", ["(x(t0),y(t0)) = (" + pointXDisp + "," + pointYDisp + ")"] );
+		
+		
+		// calculate the derivatives:
+		
+		//calculate the derivative of x with respect to t
+		var dx_dt = math.derivative(xtFunctionText, 't').evaluate({t: t}) ; 
+		
+		//calculate the derivative of y with respect to t
+		var dy_dt = math.derivative(ytFunctionText, 't').evaluate({t: t}) ;
+		
+		//calculate the derivative of f(x,y) with respect to x
+		var dz_dx = math.derivative(functionText, 'x').evaluate({x: xPoint, y: yPoint}) ; 
+		
+		//calculate the derivative of f(x,y) with respect to y
+		var dz_dy = math.derivative(functionText, 'y').evaluate({x: xPoint, y: yPoint}) ; 
+		
+		// calculate df of f(x,y) aka dz/dt
+		var df = dz_dx * dx_dt + dz_dy * dy_dt;
+		
+		
+		// to plot the derivatives lines, we need to create vectors
+		// all vectors should originate from the trace point
+		var vectorTail = [xPoint, zPoint, yPoint];
+		
+		// amount to scale vector by
+		var scale = 1
+		
+		// plotting the derivative of f(x,y) with respect to x
+		// since y is held constant, slope vector is [1,0,dz_dx]
+		// don't forget that mathbox flips the y and z axis so it becomes [1,dz_dx,0]
+		var dxVectorHead = [xPoint + scale, zPoint + scale * dz_dx, yPoint];
+		dxDerivData.set( "data", [dxVectorHead,vectorTail] );
+		
+		// plotting the derivative of f(x,y) with respect to y
+		// since x is held constant, slope vector is [0,1,dz_dx]
+		// don't forget that mathbox flips the y and z axis so it becomes [0,dz_dx,1]
+		var dyVectorHead = [xPoint, zPoint + scale * dz_dy, yPoint + scale];
+		dyDerivData.set( "data", [dyVectorHead,vectorTail] );
+		
+		// calculate tangent plane from x and y slopes (dz_dx and dz_dy)
+		tangentPlaneData.set("expr", 
+		    function (emit, x, y, i, j, time) 
+			{ 
+				var z = dz_dx*(x - xPoint) + dz_dy*(y - yPoint) + zPoint;
+			    emit( x, z, y );
+			}
+		);
+		
+		//plot df as vector
+		var dfVectorHead = [xPoint + scale, zPoint + scale * df, yPoint + scale];
+		dfVectorData.set( "data", [dfVectorHead, vectorTail] );
+		
+		
+	}
+	
+	// plot the origin point (x0,y0) on the graph.
+	var originPointData = view.array({
+		width: 3, channels: 3,		
+		data: [ [1,2,3] ],
+    });  
+	  
+	// make point display optional (default is false)
+	var pointVisible = true;
+	var originPointView = view.point( {size: 40, color: "white", points:originPointData, visible: pointVisible} );
+	
+	var pointDataText = view.text( {width:1, data:["(x0,y0)"], font: "Helvetica", style: "normal"} );
+	var pointDataTextView = view.label( {text: pointDataText, points: originPointData,
+      size: 14, color: "white", outline: 0, offset: [0,-20], zIndex: 2} );
+	
+	// create data and view for partial derivatives in x and y and theta directions
+	
+	// items:2, because vectors require two values each
+	// data: represents the head and tail of vector
+	var dxDerivData = view.array({
+		width: 2, items: 2, channels: 3,
+		data: [ [0,0,0],[1,1,1] ],
+	});
+	var dyDerivData = view.array({
+		width: 2, items: 2, channels: 3,
+		data: [ [0,0,0],[1,1,1] ], 
+	});
+
+	
+	var dxDerivVisible = false;
+	var dxDerivView = view.vector({
+		points: dxDerivData,
+		color: "fuchsia", width: 8, start: true, visible:dxDerivVisible, zIndex: 1
+	});
+	
+	var dxDerivText = view.text( {width:1, data:["dz/dx"], font: "Helvetica", style: "normal"} );
+	var dxDerivTextView = view.label( {text: dxDerivText, points: dxDerivData,
+      size: 12, color: "fuchsia", outline: 0, offset: [30,20], zIndex: 1, visible: dxDerivVisible} );
+	  
+	  
+	var dyDerivVisible = false;
+	var dyDerivView = view.vector({
+		points: dyDerivData,
+		color: "chartreuse", width: 8, start: true, visible:dyDerivVisible, zIndex: 1
+	});
+	
+	var dyDerivText = view.text( {width:1, data:["dz/dy"], font: "Helvetica", style: "normal"} );
+	var dyDerivTextView = view.label( {text: dyDerivText, points: dyDerivData,
+      size: 12, color: "chartreuse", outline: 0, offset: [30,20], zIndex: 1, visible: dyDerivVisible} );
+	
+	// create data and view for tangent plane
+	
+	var tangentPlaneData = view.area({
+        axes: [1,3], channels: 3, width: 64, height: 64,
+		expr: function (emit, x, y, i, j, t)
+		{
+          emit( x, 3, y );
+        },
+    });
+	
+	var tangentPlaneVisible = false;
+	var tangentPlaneViewSolid = view.surface({shaded:false, color: "#888888", points:tangentPlaneData, visible:tangentPlaneVisible, opacity:0.8, zWrite:false} );
+	var tangentPlaneViewWire = view.surface({
+      points: tangentPlaneData,
+	  fill: false, lineX: true, lineY: true,
+      color: "#444444", visible: tangentPlaneVisible, opacity: 0.8, width: 2, zWrite:false
+    });
+
+	
+	var dfVectorData = view.array({
+		width: 1, items: 2, channels: 3,
+		data: [ [0,0,0],[1,1,1] ], 
+	});
+	var dfVectorVisible = false;
+	var dfVectorView = view.vector({
+		points: dfVectorData,
+		color: "orange", width: 8, start: true, visible:dfVectorVisible, zIndex: 1
+	});
+	var dfDerivText = view.text( {width:1, data:["dz/dt"], font: "Helvetica", style: "normal"} );
+	var dfDerivTextView = view.label( {text: dfDerivText, points: dfVectorData,
+      size: 12, color: "orange", outline: 0, offset: [30,20], zIndex: 1, visible: dfVectorVisible} );
+	
+	
+	<!-- END OF DISPLAY DERIVATIVES ===================================================== -->
+	
+	
+	<!-- START OF GUI SETTING ===================================================== -->
+	// to control the parameters for displaying the graph
+	
+	var gui = new dat.GUI();
+	
+	gui.add( this, 'functionText' ).name('z = f(x,y) = ');
+	
+	gui.add( this, 'displayGraphFunc' ).name("Update Graph");
+	
+	gui.add( this, 'xtFunctionText' ).name('x(t) = ');
+	gui.add( this, 'ytFunctionText' ).name('y(t) = ');
+	gui.add( this, 'displadyDerivativesFunc' ).name("Update x(t),y(t)");
+	
+	//need to set min and max values to follow the boundaries of graph
+	gui.add( this, "t" ).min(-2).max(2).step(0.01).name('t0 = ').onChange( displadyDerivativesFunc );
+
+	gui.add( this, "dxDerivVisible" ).name("dz/dx").onChange( 
+		function()
+		{
+			dxDerivView.set("visible", dxDerivVisible);
+			dxDerivTextView.set("visible", dxDerivVisible);
+		}
+	 );
+	 
+	gui.add( this, "dyDerivVisible" ).name("dz/dy").onChange( 
+		function()
+		{
+			dyDerivView.set("visible", dyDerivVisible);
+			dyDerivTextView.set("visible", dyDerivVisible);
+		}
+	 ); 
+	 
+
+	var tangentPlaneGUI = gui.add( this, "tangentPlaneVisible" ).name("Tangent plane").onChange( 
+		function()
+		{
+			tangentPlaneViewSolid.set("visible", tangentPlaneVisible);
+			tangentPlaneViewWire.set("visible", tangentPlaneVisible);
+		}
+	 );	
+	
+
+	var dfVectorGUI = gui.add( this, "dfVectorVisible" ).name("dz/dt").onChange( 
+		function()
+		{
+			dfVectorView.set("visible", dfVectorVisible);
+			dfDerivTextView.set("visible", dfVectorVisible);
+		}
+	 );
+	 
+	<!-- END OF GUI SETTING ===================================================== -->
+	
+	<!-- ON LOAD ===================================================== -->
+		
+	displayGraphFunc();
+	
+	
+	</script>
+
+</div>
+</body>
+</html>
