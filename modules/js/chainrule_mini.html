@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script src="parser.js"></script>
+	<script src="math.js"></script>
+</head>
+<body>
+
+<p>z = f(x,y) = <input type="text" id="fxy" value="((x^2)*y)+((y^2)*x)"></p>
+<p>x(t) = <input type="text" id="xt" value="t^2"> </p>
+<p>y(t) = <input type="text" id="yt" value="t^3"> </p>
+<p>t = <input type="text" id="tVal" value="2"> </p>
+
+<button onclick="chainRule()">Calculate</button>
+
+<p id="confirm"></p>
+<br>
+<p id="dxdt"></p>
+<p id="dydt"></p>
+<br>
+<p id="xypoint"></p>
+<p id="zpoint"></p>
+<br>
+<p id="dzdx"></p>
+<p id="dzdy"></p>
+<br>
+<p id="dzdt"></p>
+
+
+<script>
+
+	
+	var chainRule = function() 
+	{
+		
+		var functionText = document.getElementById("fxy").value;
+		
+		var xPoint, yPoint, zPoint; //vars for x0, y0, f(x0,y0)
+
+		var t = document.getElementById("tVal").value; //t0
+		var xtFunctionText = document.getElementById("xt").value;
+		var ytFunctionText = document.getElementById("yt").value;
+	
+		document.getElementById("confirm").innerHTML = "f(x,y) = " + functionText + "<br>x(t) = " + xtFunctionText + "<br>y(t) = " + ytFunctionText + "<br>t0 = " + t; 
+
+		var f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
+		
+		var xtFunc = Parser.parse( xtFunctionText ).toJSFunction( ['t'] );
+		var ytFunc = Parser.parse( ytFunctionText ).toJSFunction( ['t'] );
+		
+		//calculate the derivative of x with respect to t
+		var dx_dt = math.derivative(xtFunctionText, 't') ;
+		var dx_dt_val = dx_dt.evaluate({t: t}) ;
+		
+		document.getElementById("dxdt").innerHTML = "dx/dt = " + dx_dt;
+		document.getElementById("dxdt").innerHTML += "<br>dx/dt at t0 = " + dx_dt_val;
+		
+		//calculate the derivative of y with respect to t
+		var dy_dt = math.derivative(ytFunctionText, 't') ;
+		var dy_dt_val = dy_dt.evaluate({t: t}) ;
+		
+		document.getElementById("dydt").innerHTML = "dy/dt = " + dy_dt;
+		document.getElementById("dydt").innerHTML += "<br>dy/dt at t0 = " + dy_dt_val;
+		
+		
+		//set the point to reflect x and y functions of t
+		xPoint = xtFunc(t); //x0 = x(t0)
+		yPoint = ytFunc(t); //y0 = y(t0)
+		zPoint = f(xPoint, yPoint); //f(x0,y0) = f(x(t0),y(t0))
+		
+		var vectorTail = [xPoint,yPoint];
+		document.getElementById("xypoint").innerHTML = "x(t0),y(t0) = " + vectorTail;
+		document.getElementById("zpoint").innerHTML = "z = f(x(t0),y(t0)) = " + zPoint;
+		
+		//calculate the derivative of f(x,y) with respect to x
+		var dz_dx = math.derivative(functionText, 'x'); 
+		var dz_dx_val = dz_dx.evaluate({x: xPoint, y: yPoint}) ;
+		
+		document.getElementById("dzdx").innerHTML = "dz/dx = " + dz_dx;
+		document.getElementById("dzdx").innerHTML += "<br>dz/dx at (x(t0),y(t0)) = " + dz_dx_val;
+		
+		
+		//calculate the derivative of f(x,y) with respect to y
+		var dz_dy = math.derivative(functionText, 'y'); 
+		var dz_dy_val = dz_dy.evaluate({x: xPoint, y: yPoint}) ;
+		
+		document.getElementById("dzdy").innerHTML = "dz/dy = " + dz_dy;
+		document.getElementById("dzdy").innerHTML += "<br>dz/dy at (x(t0),y(t0)) = " + dz_dy_val;
+		
+
+		// calculate df of f(x,y) aka dz/dt
+		var df = dz_dx_val * dx_dt_val + dz_dy_val * dy_dt_val;
+		
+		document.getElementById("dzdt").innerHTML = "dz/dt = dz/dx * dx/dt + dz/dy * dy/dt";
+		
+		document.getElementById("dzdt").innerHTML += "<br>dz/dt = " + dz_dx_val + " * " + dx_dt_val + " + " +dz_dy_val + " * " + dy_dt_val + " = " + df;
+		
+	}
+
+</script>
+
+
+</body>
+</html>
