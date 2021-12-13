@@ -190,10 +190,10 @@
 				function (emit, x, y, i, j, t)
 				{
 					var z = f(x,y);
-					var percent = (z - 1.2 * zMin) / (zMax - 1.2 * zMin);
+					var percent = (z - 1 * zMin) / (zMax - 1 * zMin);
 					var color = new THREE.Color( 0xffffff );
-					color.setHSL( 1-percent, 1, 0.5 );
-					emit( color.r, color.g, color.b, 0.4 ); //last one is the alpha (transparency) setting
+					color.setHSL( 1-percent, 1, 0.5 ); // hue, saturation, lightness
+					emit( color.r, color.g, color.b, 0.5 ); //last one is the alpha (transparency) setting
 				}
 			);
 		
@@ -201,8 +201,7 @@
 		critPointsDispArray = [];
 		critPointData.set("data", critPointsDispArray);
 		
-		//critPointLabelsVisible = false;
-		//displayCritPointsLabelsFunc(false);
+		displayTraceFunc();
 	}
 	
 	<!-- END OF DISPLAY GRAPH SETTING ===================================================== -->
@@ -211,7 +210,8 @@
 	
 	var critPointsDispArray = []; // to transfer the points from critpoint calc for displaying on graph (in the order of x,z,y per index)
 	var critPointsLabelArray = []; // to transfer re-indexed x,y points from the above array
-	
+	var critPointsClassArray = []; // to store the calculations of crit points classifications
+
 	
 	var displayCritPointsFunc = function ()
 	{
@@ -225,9 +225,14 @@
 		var fx = math.derivative(functionText, 'x')  ; 
 		var fy = math.derivative(functionText, 'y')  ; 
 		
+		var fxx = math.derivative(fx, 'x');
+		var fyy = math.derivative(fy, 'y');
+		var fxy = math.derivative(fx, 'y');
+		
 		// emptying the array first for every time the function is called
 		// so that there's no lingering from previous equation
 		critPointsDispArray = [];
+
 		
 		// now we transfer the points values from the calculation
 		critPointsDispArray = critPointsCalc( xMin, xMax, yMin, yMax, f);
@@ -238,14 +243,45 @@
 		// now we are re-indexing the critPointsDispArray
 		// for labeling purposes, we want to display the point locations in their proper format x,y (z is not needed)
 		critPointsLabelArray = [];
+		critPointsClassArray = [];
 		
 		for (var m = 0; m < critPointsDispArray.length; m++)
 		{
-			critPointsLabelArray.push( [ "(" + critPointsDispArray[m][0] + "," + critPointsDispArray[m][2] + ")" ] ); // remember that y point is stored in [2] index
+			var xPoint = critPointsDispArray[m][0];
+			var yPoint = critPointsDispArray[m][2];  // remember that y point is stored in [2] index
+			
+			critPointsLabelArray.push( [ "(" + xPoint + "," + yPoint + ")" ] );
+			
+			
+			var fxxVal = fxx.evaluate({x: xPoint, y: yPoint}) ;
+			var fxx0 = Math.round(fxxVal * 100) / 100;
+
+			var fyyVal = fyy.evaluate({x: xPoint, y: yPoint}) ;
+			var fyy0 = Math.round(fyyVal * 100) / 100;
+
+			var fxyVal = fxy.evaluate({x: xPoint, y: yPoint}) ;
+			var fxy0 = Math.round(fxyVal * 100) / 100;
+
+			var H = fxx0 * fyy0 - Math.pow(fxy0,2);
+
+			if (H == 0) {
+				critPointsClassArray.push( "undefined" );
+			} else if (H < 0) {
+				critPointsClassArray.push( "saddle point" );
+				
+			} else if (H > 0) {
+				if (fxx0 < 0) {
+					critPointsClassArray.push( "maxima" );
+
+				} else if (fxx0 > 0) {
+					critPointsClassArray.push( "minima" );
+
+				}
+			}	
 		}
 		
-		critPointText.set( "width", critPointsLabelArray.length);
-		critPointText.set( "expr", 
+		critPointLocText.set( "width", critPointsLabelArray.length);
+		critPointLocText.set( "expr", 
 			function(emit,i,t)
 			{
 				var str = critPointsLabelArray[i];
@@ -253,6 +289,17 @@
 				i++;
 			}
 		);
+		
+		critPointClassText.set( "width", critPointsClassArray.length);
+		critPointClassText.set( "expr", 
+			function(emit,i,t)
+			{
+				var str = critPointsClassArray[i];
+				emit(str);
+				i++;
+			}
+		);
+
 	}
 	
 	var critPointData = view.array({
@@ -265,13 +312,13 @@
 	
 	var critPointView = view.point({
 		size: 30, color: "white", 
-		points:critPointData, 
+		points:critPointData, zIndex: 1,
 		visible: critPointVisible
 	});
 	
-	var critPointTextVisible = false;
+	var critPointLocVisible = false;
 	
-	var critPointText = view.text({
+	var critPointLocText = view.text({
 		width: critPointsLabelArray.length,
 		expr: function(emit,i,t){
 			var str = critPointsLabelArray[i];
@@ -279,93 +326,30 @@
 		},
 		font: "Helvetica", style: "normal" 
 	});
-	var critPointLabel = view.label({
-		text: critPointText, points: critPointData,
+	var critPointLocLabel = view.label({
+		text: critPointLocText, points: critPointData,
 		size: 14, color: "white", outline: 0, offset: [0,-24], zIndex: 2,
-		visible: critPointTextVisible,
+		visible: critPointLocVisible,
+	});
+	
+	var critPointClassVisible = false;
+	
+	var critPointClassText = view.text({
+		width: critPointsClassArray.length,
+		expr: function(emit,i,t){
+			var str = critPointsClassArray[i];
+			emit(str);
+		},
+		font: "Helvetica", weight: "bold", style: "normal" 
+	});
+	var critPointClassLabel = view.label({
+		text: critPointClassText, points: critPointData,
+		size: 14, color: "white", outline: 0, offset: [0,24], zIndex: 2,
+		visible: critPointClassVisible,
 	});
 	
 	
 	<!-- END OF CRITICAL PTS DISPLAY  ==================================================== -->
-   
-	
-   
-	<!-- START OF CRITICAL PTS LABELS CALC  ==================================================== -->
-	
-	//var critPointLabelsVisible = true;
-	/*
-	var displayCritPointsLabelsFunc = function(critPointLabelsVisible)
-	{	
-		f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
-		
-		fx = math.derivative(functionText, 'x')  ; 
-		fy = math.derivative(functionText, 'y')  ; 
-		
-		var fxx = math.derivative(fx, 'x');
-		var fyy = math.derivative(fy, 'y');
-		var fxy = math.derivative(fx, 'y');
-		
-		var criticalPointLocText = view.text({
-				width:1, data:[ "(1,2)"], font: "Helvetica", style: "normal" 
-			});
-		
-		if (critPointLabelsVisible) 
-		{
-		for (var m = 0; m < critPointsDispArray.length; m++)
-		{
-			let tempArray = view.array({
-				width: 3, channels: 3,
-				data: [ [critPointsDispArray[m]] ],
-			});
-			
-			criticalPointLocText.set("data", [ "(" + critPointsDispArray[m][0] + "," + critPointsDispArray[m][2] + ")"] );
-			view.label({
-				text: criticalPointLocText, points: tempArray,
-				size: 14, color: "white", outline: 0, offset: [0,-24], zIndex: 2,
-				visible: critPointLabelsVisible
-			});
-			
-			
-			
-			var xPoint = critPointsDispArray[m][0];
-			var yPoint = critPointsDispArray[m][2];
-
-			var fxxVal = fxx.evaluate({x: xPoint, y: yPoint}) ;
-			var fxx0 = Math.round(fxxVal * 100) / 100;
-
-			var fyyVal = fyy.evaluate({x: xPoint, y: yPoint}) ;
-			var fyy0 = Math.round(fyyVal * 100) / 100;
-
-			var fxyVal = fxy.evaluate({x: xPoint, y: yPoint}) ;
-			var fxy0 = Math.round(fxyVal * 100) / 100;
-
-			var H = fxx0 * fyy0 - Math.pow(fxy0,2);
-
-			let cpText = view.text( {width:1, data:[ "H" ], font: "Helvetica", weight: "bold", style: "normal"} );
-			let cpLabel = view.label( {text: cpText, points: tempArray,
-				size: 16, color: "blue",  background:"white", offset: [0,24], zIndex: 2} );
-
-			if (H == 0) {
-				cpText.set("data", [ "undefined" ] );
-			} else if (H < 0) {
-				cpText.set("data", [ "saddle point" ] );
-				cpLabel.set("color", "green");
-			} else if (H > 0) {
-				if (fxx0 < 0) {
-					cpText.set("data", [ "maxima" ] );
-					cpLabel.set("color", "red");
-				} else if (fxx0 > 0) {
-					cpText.set("data", [ "minima" ] );
-				}
-			}
-			
-		}
-		} 
-	}
-   
-	*/
-   
-	<!-- END OF CRITICAL PTS LABELS DISPLAY  ==================================================== -->
    
    
    
@@ -413,6 +397,84 @@
 	<!-- END OF CRITICAL PTS CALC  ==================================================== -->	
 	
 	
+	
+	<!-- START OF TRACE POINT SETTING ===================================================== -->
+
+	var traceX = 0, traceY = 0, traceZ;
+
+	var displayTraceFunc = function ()
+	{
+		f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
+
+		traceZ = f(traceX, traceY);
+		tracePointData.set("data", [ [traceX, traceZ, traceY] ] );
+		
+		var traceXDisp = Math.round(traceX * 100) / 100;
+		var traceYDisp = Math.round(traceY * 100) / 100;
+		var traceZDisp = Math.round(traceZ * 100) / 100;
+		traceText.set( "data", ["(" + traceXDisp + " , " + traceYDisp + " , " + traceZDisp + ")"] );
+		traceTextView.set("visible", traceVisible);
+		
+		
+		//calculate the derivative of f(x,y) with respect to x
+		var dz_dx = math.derivative(functionText, 'x').evaluate({x: traceX, y: traceY}) ; 
+		
+		//calculate the derivative of f(x,y) with respect to y
+		var dz_dy = math.derivative(functionText, 'y').evaluate({x: traceX, y: traceY}) ; 
+		
+		// calculate tangent plane from x and y slopes (dz_dx and dz_dy)
+		tangentPlaneData.set("expr", 
+		    function (emit, x, y, i, j, time) 
+			{ 
+				var z = dz_dx*(x - traceX) + dz_dy*(y - traceY) + traceZ;
+			    emit( x, z, y );
+			}
+		);
+
+	}
+
+	// plot a point on the graph.
+
+	// use data: instead of expr: because it is a single value, no need to calculate via expr.
+	// actual value of data set later (requires zFunction to be parsed)
+	var tracePointData = view.array({
+		width: 3, channels: 3,
+		data: [ [1,2,3] ],
+    });
+
+	// make point display optional (default is false)
+	var traceVisible = false;
+	var tracePointView = view.point( {size: 30, color: "cyan", points:tracePointData, visible: traceVisible, zIndex: 1} );
+
+	
+	var traceText = view.text( {width:1, data:["(0,0,0)"], font: "Helvetica", weight: "bold", style: "normal"} );
+	var traceTextView = view.label( {text: traceText, points: tracePointData,
+      size: 14, color: "cyan", outline: 0, offset: [120,0], zIndex: 3, visible: traceVisible} );
+	  
+	  
+	// create data and view for tangent plane
+	
+	var tangentPlaneData = view.area({
+        axes: [1,3], channels: 3, width: 64, height: 64,
+		expr: function (emit, x, y, i, j, t)
+		{
+          emit( x, 3, y );
+        },
+    });
+	
+	var tangentPlaneVisible = false;
+	var tangentPlaneViewSolid = view.surface({shaded:false, color: "#888888", points:tangentPlaneData, visible:tangentPlaneVisible, opacity:0.8, zWrite:false} );
+	var tangentPlaneViewWire = view.surface({
+      points: tangentPlaneData,
+	  fill: false, lineX: true, lineY: true,
+      color: "#444444", visible: tangentPlaneVisible, opacity: 0.8, width: 2, zWrite:false
+    });
+	
+	
+	<!-- END OF TRACE POINT SETTING ===================================================== -->
+
+	
+	
 	<!-- START OF GUI SETTING ===================================================== -->
 	// to control the parameters for displaying the graph
 
@@ -432,12 +494,44 @@
 		}
 	);
 	
-	cpFolderGUI.add( this, "critPointTextVisible" ).name("Show locations").onChange(
+	cpFolderGUI.add( this, "critPointLocVisible" ).name("Locations (x,y)").onChange(
 		function()
 		{
-			critPointLabel.set("visible", critPointTextVisible);
+			critPointLocLabel.set("visible", critPointLocVisible);
 		}
 	);
+	
+	cpFolderGUI.add( this, "critPointClassVisible" ).name("Classifications").onChange(
+		function()
+		{
+			critPointClassLabel.set("visible", critPointClassVisible);
+		}
+	);
+	
+	
+	var traceFolderGUI = gui.addFolder( "Trace (x0,y0) point on graph");
+	
+	traceFolderGUI.add( this, "traceVisible" ).name("Trace(x0,y0)").onChange(
+		function()
+		{
+			tracePointView.set("visible", traceVisible);
+			traceTextView.set("visible", traceVisible);
+		}
+	);
+	var xPointGUI = traceFolderGUI.add( this, 'traceX' ).min(xMin).max(xMax).step(0.01).name('x0 = ');
+	xPointGUI.onChange( displayTraceFunc );
+	var yPointGUI = traceFolderGUI.add( this, 'traceY' ).min(yMin).max(yMax).step(0.01).name('y0 = ');
+	yPointGUI.onChange( displayTraceFunc );
+	
+	
+	traceFolderGUI.add( this, "tangentPlaneVisible" ).name("Tangent plane").onChange( 
+		function()
+		{
+			tangentPlaneViewSolid.set("visible", tangentPlaneVisible);
+			tangentPlaneViewWire.set("visible", tangentPlaneVisible);
+		}
+	 );	
+	
 	
 
 	<!-- ON LOAD -->
