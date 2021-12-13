@@ -202,18 +202,22 @@
 		critPointData.set("data", critPointsDispArray);
 		
 		//critPointLabelsVisible = false;
-		displayCritPointsLabelsFunc(false);
+		//displayCritPointsLabelsFunc(false);
 	}
 	
 	<!-- END OF DISPLAY GRAPH SETTING ===================================================== -->
    
    <!-- START OF CRITICAL PTS DISPLAY  ==================================================== -->
 	
-	var critPointsDispArray = []; // to transfer the points from critpoint calc for displaying on graph
+	var critPointsDispArray = []; // to transfer the points from critpoint calc for displaying on graph (in the order of x,z,y per index)
+	var critPointsLabelArray = []; // to transfer re-indexed x,y points from the above array
 	
 	
 	var displayCritPointsFunc = function ()
 	{
+		// create alert first before calculating the critical points, for better UX
+		// since calculations will be quite slow, especially for more complex equations
+		// further UX improvements can include a loading/buffer screen while calculating
 		alert("Critical points will be calculated upon closing this alert.\n\nThis will take a while.\n\nDO NOT refresh the page or press any other buttons while it's loading as it will slow down the process.");
 		
 		f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
@@ -229,10 +233,26 @@
 		critPointsDispArray = critPointsCalc( xMin, xMax, yMin, yMax, f);
 		
 		critPointData.set( "width", critPointsDispArray.length);
-		critPointData.set( "data", critPointsDispArray);
+		critPointData.set( "data", critPointsDispArray); // remember that it's x,z,y for plotting the points with Mathbox
 		
-		//critPointLabelsVisible = true;
-		displayCritPointsLabelsFunc(true);
+		// now we are re-indexing the critPointsDispArray
+		// for labeling purposes, we want to display the point locations in their proper format x,y (z is not needed)
+		critPointsLabelArray = [];
+		
+		for (var m = 0; m < critPointsDispArray.length; m++)
+		{
+			critPointsLabelArray.push( [ "(" + critPointsDispArray[m][0] + "," + critPointsDispArray[m][2] + ")" ] ); // remember that y point is stored in [2] index
+		}
+		
+		critPointText.set( "width", critPointsLabelArray.length);
+		critPointText.set( "expr", 
+			function(emit,i,t)
+			{
+				var str = critPointsLabelArray[i];
+				emit(str);
+				i++;
+			}
+		);
 	}
 	
 	var critPointData = view.array({
@@ -249,6 +269,22 @@
 		visible: critPointVisible
 	});
 	
+	var critPointTextVisible = false;
+	
+	var critPointText = view.text({
+		width: critPointsLabelArray.length,
+		expr: function(emit,i,t){
+			var str = critPointsLabelArray[i];
+			emit(str);
+		},
+		font: "Helvetica", style: "normal" 
+	});
+	var critPointLabel = view.label({
+		text: critPointText, points: critPointData,
+		size: 14, color: "white", outline: 0, offset: [0,-24], zIndex: 2,
+		visible: critPointTextVisible,
+	});
+	
 	
 	<!-- END OF CRITICAL PTS DISPLAY  ==================================================== -->
    
@@ -257,7 +293,7 @@
 	<!-- START OF CRITICAL PTS LABELS CALC  ==================================================== -->
 	
 	//var critPointLabelsVisible = true;
-	
+	/*
 	var displayCritPointsLabelsFunc = function(critPointLabelsVisible)
 	{	
 		f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
@@ -289,7 +325,7 @@
 				visible: critPointLabelsVisible
 			});
 			
-			/*
+			
 			
 			var xPoint = critPointsDispArray[m][0];
 			var yPoint = critPointsDispArray[m][2];
@@ -322,12 +358,12 @@
 					cpText.set("data", [ "minima" ] );
 				}
 			}
-			*/
+			
 		}
 		} 
 	}
    
-   
+	*/
    
 	<!-- END OF CRITICAL PTS LABELS DISPLAY  ==================================================== -->
    
@@ -385,12 +421,21 @@
 	gui.add( this, 'functionText' ).name('z = f(x,y) = ');
 	gui.add( this, 'displayGraphFunc' ).name("Update Graph");
 	
-	gui.add( this, 'displayCritPointsFunc' ).name("Calculate Crit points");
+	var cpFolderGUI = gui.addFolder( "Critical Points (Calculate first!)" );
 	
-	gui.add( this, "critPointVisible" ).name("Critical points").onChange(
+	cpFolderGUI.add( this, 'displayCritPointsFunc' ).name("Calculate");
+	
+	cpFolderGUI.add( this, "critPointVisible" ).name("Show points").onChange(
 		function()
 		{
 			critPointView.set("visible", critPointVisible);
+		}
+	);
+	
+	cpFolderGUI.add( this, "critPointTextVisible" ).name("Show locations").onChange(
+		function()
+		{
+			critPointLabel.set("visible", critPointTextVisible);
 		}
 	);
 	
