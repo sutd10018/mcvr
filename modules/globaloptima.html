@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Critical Points</title>
+  <title>EVT (Global Optima)</title>
   <script src="js/mathbox-bundle.js"></script>
   <script src="js/dat.gui.js"></script>
 
@@ -128,7 +128,7 @@
 	<!-- START OF DISPLAY GRAPH SETTING ==================================================== -->
 	// to display the basic graph
 	 
-	var functionText = "cos(x)*(E*cos(y))"; // the function to parse
+	var functionText = "x^2+x*y"; // the function to parse
 	
 	var zAutofit = true; 
 	
@@ -153,9 +153,8 @@
 			var zBiggest  = f(xMax, yMax);
 			
 			//for every possible x & combination, find the smallest & biggest z values
-			//infinity check is a must, otherwise when the equation results in infinity (eg divide by zero) then the graph cannot be plotted
+			//infinity check is a must, otherwise when the equation results in infinity (ie divide by zero) then the graph cannot be plotted
 			//when the z value is infinite, we can assign our own value to scale the graph nicely (this is optional) 
-
 			for (var x = xMin; x <= xMax; x += xStep)
 			{
 				for (var y = yMin; y <= yMax; y += yStep)
@@ -190,25 +189,148 @@
 				function (emit, x, y, i, j, t)
 				{
 					var z = f(x,y);
-					var percent = (z - 1 * zMin) / (zMax - 1 * zMin);
-					var color = new THREE.Color( 0xffffff );
-					color.setHSL( 1-percent, 1, 0.5 ); // hue, saturation, lightness
-					emit( color.r, color.g, color.b, 0.5 ); //last one is the alpha (transparency) setting
+					var percent = (z - zMin) / (zMax - zMin);
+					emit( percent, percent, percent, 0.8 );
 				}
 			);
+		
+	
+		displayRangeFunc();
 		
 		//reset the points data/array whenever the graph is updated with new equation
 		critPointsDispArray = [];
 		critPointData.set("data", critPointsDispArray);
 		
-		//call for new trace function whenever this display graph function is called
+		globalMaximaArray = [];
+		globalMaximaData.set("data",[globalMaximaArray]);
+		
+		globalMinimaArray = [];
+		globalMinimaData.set("data",[globalMinimaArray]);
+		
+
 		displayTraceFunc();
+		
+		
 	}
-	
 	<!-- END OF DISPLAY GRAPH SETTING ===================================================== -->
 	
 	
+	<!-- START OF CURVE (RANGE DOMAIN) DISPLAY  ==================================================== -->
 	
+	var lowerXRange = -2, upperXRange = 2, lowerYRange = -2, upperYRange = 2; 
+	
+	var displayRangeFunc = function()
+	{
+		f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
+		
+		xMinCurveData.set("expr", 
+		    function (emit, y, j, t) 
+			{ 
+			    emit( lowerXRange, f(lowerXRange,y), y );
+			}
+		);
+		xMinCurveText.set("data", ["xMin = " + Math.round(lowerXRange * 100) / 100]);
+
+		xMaxCurveData.set("expr", 
+		    function (emit, y, j, t) 
+			{ 
+			    emit( upperXRange, f(upperXRange,y), y );
+			}
+		);
+		xMaxCurveText.set("data", ["xMax = " + Math.round(upperXRange * 100) / 100]);
+		
+		yMinCurveData.set("expr", 
+		    function (emit, x, i, t) 
+			{ 
+			    emit( x, f(x,lowerYRange), lowerYRange );
+			}
+		);
+		yMinCurveText.set("data", ["yMin = " + Math.round(lowerYRange * 100) / 100]);
+		
+		yMaxCurveData.set("expr", 
+		    function (emit, x, i, t) 
+			{ 
+			    emit( x, f(x,upperYRange), upperYRange );
+			}
+		);
+		yMaxCurveText.set("data", ["yMax = " + Math.round(upperYRange * 100) / 100]);
+		
+		
+		
+		
+		
+		
+	}
+	
+	// plot curves (boundaries) on graph  
+
+	var xMinCurveData = view.interval({
+		axis: 3, channels: 3, width: 64,
+	});
+	var xMinCurveView = view.line({
+		points: xMinCurveData,
+		color: "lightgreen", width: 16, visible: true,
+	});
+	var xMinCurveText = view.text({
+		width:1, data:["xMin"], font: "Helvetica", style: "normal"
+	});
+	var xMinCurveTextView = view.label({
+		text: xMinCurveText, points: xMinCurveData,
+		size: 10, color: "lightgreen", outline: 0, offset: [-20,-40], zIndex: 3, visible: true
+	});
+	
+	
+	var xMaxCurveData = view.interval({
+		axis: 3, channels: 3, width: 64,
+	});
+	var xMaxCurveView = view.line({
+		points: xMaxCurveData,
+		color: "lightgreen", width: 16, visible: true,
+	});
+	var xMaxCurveText = view.text({
+		width:1, data:["xMax"], font: "Helvetica", style: "normal"
+	});
+	var xMaxCurveTextView = view.label({
+		text: xMaxCurveText, points: xMaxCurveData,
+		size: 10, color: "lightgreen", outline: 0, offset: [-20,-40], zIndex: 3, visible: true
+	});
+	
+	
+	var yMinCurveData = view.interval({
+		axis: 1, channels: 3, width: 64,
+	});
+	var yMinCurveView = view.line({
+		points: yMinCurveData,
+		color: "lightpink", width: 16, visible: true,
+	});
+	var yMinCurveText = view.text({
+		width:1, data:["yMin"], font: "Helvetica", style: "normal"
+	});
+	var yMinCurveTextView = view.label({
+		text: yMinCurveText, points: yMinCurveData,
+		size: 10, color: "lightpink", outline: 0, offset: [-20,40], zIndex: 3, visible: true
+	});
+	
+	var yMaxCurveData = view.interval({
+		axis: 1, channels: 3, width: 64,
+	});
+	var yMaxCurveView = view.line({
+		points: yMaxCurveData,
+		color: "lightpink", width: 16, visible: true,
+	});
+	var yMaxCurveText = view.text({
+		width:1, data:["yMax"], font: "Helvetica", style: "normal"
+	});
+	var yMaxCurveTextView = view.label({
+		text: yMaxCurveText, points: yMaxCurveData,
+		size: 10, color: "lightpink", outline: 0, offset: [-20,40], zIndex: 3, visible: true
+	});
+	
+	
+	<!-- END OF CURVE (RANGE DOMAIN) DISPLAY  ==================================================== -->
+	
+	
+   
 	<!-- START OF CRITICAL PTS CALC  ==================================================== -->
 	
 	// the function to calculate possible critical points within a set range
@@ -253,8 +375,6 @@
 	<!-- END OF CRITICAL PTS CALC  ==================================================== -->	
 	
 	
-	
-   
    <!-- START OF CRITICAL PTS DISPLAY  ==================================================== -->
 	
 	var critPointsDispArray = []; // to transfer the points from critpoint calc for displaying on graph (in the order of x,z,y per index)
@@ -284,7 +404,8 @@
 
 		
 		// now we transfer the points values from the calculation
-		critPointsDispArray = critPointsCalc( xMin, xMax, yMin, yMax, f);
+		// for this module, we just calculate the critical points within the boundary R
+		critPointsDispArray = critPointsCalc( lowerXRange, upperXRange, lowerYRange, upperYRange, f);
 		
 		critPointData.set( "width", critPointsDispArray.length);
 		critPointData.set( "data", critPointsDispArray); // remember that it's x,z,y for plotting the points with Mathbox
@@ -332,7 +453,22 @@
 		critPointLocText.set( "width", critPointsLabelArray.length);
 
 		critPointClassText.set( "width", critPointsClassArray.length);
+
+		globalMaximaArray = [];
+		globalMaximaData.set("data",[globalMaximaArray]);
 		
+		globalMinimaArray = [];
+		globalMinimaData.set("data",[globalMinimaArray]);
+		
+		globalMaximaLocArray = [];
+		globalMinimaLocArray = [];
+		
+		
+		optimaArray = [];
+		optimaArray = OptimaCalcFunc(lowerXRange, upperXRange, lowerYRange, upperYRange, f);
+		
+		OptimaDisplayFunc();
+
 	}
 	
 	var critPointData = view.array({
@@ -385,9 +521,170 @@
 	
 	
 	<!-- END OF CRITICAL PTS DISPLAY  ==================================================== -->
-   
-   
-   
+	
+	
+	<!-- START OF GLOBAL OPTIMA CALCULATIONS ===================================================== -->
+	// for this function, we actually just need to find the max Z value and min Z value of a function within the set Range
+	// there is no need to tie it to critical points calculations, we just use Javascript min & max array calculations
+	
+	// first we find possible z values of every x & y within the Range
+	var OptimaCalcFunc = function(xMin, xMax, yMin, yMax, f)
+	{
+		var points = [];
+		var step = 1;
+	
+		for (var x=xMin; x <= xMax; x += step)
+		{
+			for (var y=yMin; y <= yMax; y += step)
+			{
+				var z = f(x,y);
+				points.push([x,z,y]);
+			}
+		}
+		return points;
+	}
+	
+	var optimaArray = [];
+	
+	var globalMaximaArray = [];
+	var globalMinimaArray = [];
+	
+	var globalMaximaLocArray = [];
+	var globalMinimaLocArray = [];
+	
+	var OptimaDisplayFunc = function()
+	{
+		
+		//we run through the z values in optimaArray first
+		var zPointsArray = [];
+		for (var u = 0; u < optimaArray.length; u++) 
+		{
+			zPointsArray.push(optimaArray[u][1]);
+		}
+		
+		//then we find what is the biggest Z value and the smallest Z value
+		var max = Math.max(...zPointsArray);
+		var min = Math.min(...zPointsArray);
+			
+		for (var v = 0; v < optimaArray.length; v++) 
+		{	
+			var globalX = Math.round(optimaArray[v][0] * 100) / 100;
+			var globalY = Math.round(optimaArray[v][2] * 100) / 100;
+			
+			if (optimaArray[v][1] == max)
+			{
+				globalMaximaArray.push(optimaArray[v]);
+				globalMaximaLocArray.push([ "(" + globalX + "," + globalY + ")" ]);
+			}
+			if (optimaArray[v][1] == min)
+			{
+				globalMinimaArray.push(optimaArray[v]);
+				globalMinimaLocArray.push([ "(" + globalX + "," + globalY + ")" ]);
+			}
+		}
+		
+		globalMaximaData.set("width",globalMaximaArray.length);
+		globalMaximaData.set("data",globalMaximaArray);
+		
+		globalMaximaText.set("width",globalMaximaArray.length);
+		globalMaximaLocText.set("width",globalMaximaArray.length);
+		
+		
+		globalMinimaData.set("width",globalMinimaArray.length);
+		globalMinimaData.set("data",globalMinimaArray);
+		
+		globalMinimaText.set("width",globalMinimaArray.length);
+		globalMinimaLocText.set("width",globalMinimaArray.length);
+		
+	}
+	
+	var globalOptimaVisible = false;
+	
+	var globalMaximaData = view.array({
+		width: globalMaximaArray.length, //the amt of points to be displayed
+		channels: 3,
+		data: [ globalMaximaArray ],
+	});
+	
+	var globalMaximaView = view.point({
+		size: 30, color: "red", 
+		points:globalMaximaData, zIndex: 1,
+		visible: globalOptimaVisible
+	});
+	
+	var globalMaximaText = view.text({
+		width: globalMaximaArray.length,
+		expr: function(emit,i,t){
+			var str = "Global Maxima";
+			emit(str);
+			i++;
+		},
+		font: "Helvetica", weight: "bold", style: "normal" 
+	});
+	var globalMaximaLabel = view.label({
+		text: globalMaximaText, points: globalMaximaData,
+		size: 14, color: "red", outline: 0, offset: [0,24], zIndex: 2,
+		visible: globalOptimaVisible,
+	});
+	var globalMaximaLocText = view.text({
+		width: globalMaximaArray.length,
+		expr: function(emit,i,t){
+			var str = globalMaximaLocArray[i];
+			emit(str);
+			i++;
+		},
+		font: "Helvetica", weight: "bold", style: "normal" 
+	});
+	var globalMaximaLocLabel = view.label({
+		text: globalMaximaLocText, points: globalMaximaData,
+		size: 14, color: "red", outline: 0, offset: [0,-24], zIndex: 2,
+		visible: globalOptimaVisible,
+	});
+	
+	
+	var globalMinimaData = view.array({
+		width: globalMinimaArray.length, //the amt of points to be displayed
+		channels: 3,
+		data: [ globalMinimaArray ],
+	});
+	
+	var globalMinimaView = view.point({
+		size: 30, color: "gold", 
+		points:globalMinimaData, zIndex: 1,
+		visible: globalOptimaVisible
+	});
+	
+	var globalMinimaText = view.text({
+		width: globalMinimaArray.length,
+		expr: function(emit,i,t){
+			var str = "Global Minima";
+			emit(str);
+			i++;
+		},
+		font: "Helvetica", weight: "bold", style: "normal" 
+	});
+	var globalMinimaLabel = view.label({
+		text: globalMinimaText, points: globalMinimaData,
+		size: 14, color: "gold", outline: 0, offset: [0,24], zIndex: 2,
+		visible: globalOptimaVisible,
+	});
+	var globalMinimaLocText = view.text({
+		width: globalMinimaArray.length,
+		expr: function(emit,i,t){
+			var str = globalMinimaLocArray[i];
+			emit(str);
+			i++;
+		},
+		font: "Helvetica", weight: "bold", style: "normal" 
+	});
+	var globalMinimaLocLabel = view.label({
+		text: globalMinimaLocText, points: globalMinimaData,
+		size: 14, color: "gold", outline: 0, offset: [0,-24], zIndex: 2,
+		visible: globalOptimaVisible,
+	});
+	
+	
+	<!-- END OF GLOBAL OPTIMA CALCULATIONS ===================================================== -->
 	
 	
 	<!-- START OF TRACE POINT SETTING ===================================================== -->
@@ -406,26 +703,6 @@
 		var traceZDisp = Math.round(traceZ * 100) / 100;
 		traceText.set( "data", ["(" + traceXDisp + " , " + traceYDisp + " , " + traceZDisp + ")"] );
 		traceTextView.set("visible", traceVisible);
-		
-		
-		//calculate the derivative of f(x,y) with respect to x
-		//aka fx(x0,y0)
-		var dz_dx = math.derivative(functionText, 'x').evaluate({x: traceX, y: traceY}) ; 
-		
-		//calculate the derivative of f(x,y) with respect to y
-		//aka fy(x0,y0)
-		var dz_dy = math.derivative(functionText, 'y').evaluate({x: traceX, y: traceY}) ; 
-		
-		// calculate tangent plane from x and y slopes (dz_dx and dz_dy)
-		tangentPlaneData.set("expr", 
-		    function (emit, x, y, i, j, time) 
-			{ 
-				//tangent plane of f at (x0,y0)
-				//= fx(x0,y0)*(x-x0) + fy(x0,y0)*(y-y0) + f(x0,y0)
-				var z = dz_dx*(x - traceX) + dz_dy*(y - traceY) + traceZ;
-			    emit( x, z, y );
-			}
-		);
 
 	}
 
@@ -446,31 +723,11 @@
 	var traceText = view.text( {width:1, data:["(0,0,0)"], font: "Helvetica", weight: "bold", style: "normal"} );
 	var traceTextView = view.label( {text: traceText, points: tracePointData,
       size: 14, color: "cyan", outline: 0, offset: [120,0], zIndex: 3, visible: traceVisible} );
-	  
-	  
-	// create data and view for tangent plane
-	
-	var tangentPlaneData = view.area({
-        axes: [1,3], channels: 3, width: 64, height: 64,
-		expr: function (emit, x, y, i, j, t)
-		{
-          emit( x, 3, y );
-        },
-    });
-	
-	var tangentPlaneVisible = false;
-	var tangentPlaneViewSolid = view.surface({shaded:false, color: "#888888", points:tangentPlaneData, visible:tangentPlaneVisible, opacity:0.8, zWrite:false} );
-	var tangentPlaneViewWire = view.surface({
-      points: tangentPlaneData,
-	  fill: false, lineX: true, lineY: true,
-      color: "#444444", visible: tangentPlaneVisible, opacity: 0.8, width: 2, zWrite:false
-    });
-	
 	
 	<!-- END OF TRACE POINT SETTING ===================================================== -->
 
-	
-	
+
+   
 	<!-- START OF GUI SETTING ===================================================== -->
 	// to control the parameters for displaying the graph
 
@@ -479,7 +736,20 @@
 	gui.add( this, 'functionText' ).name('z = f(x,y) = ');
 	gui.add( this, 'displayGraphFunc' ).name("Update Graph");
 	
-	var cpFolderGUI = gui.addFolder( "Critical Points (Calculate first!)" );
+	var optimaFolder = gui.addFolder( "Range (Domain)" );
+	
+	var xRangeFolder = optimaFolder.addFolder( "xMin <= R <= xMax" );
+	xRangeFolder.add(this, 'lowerXRange' ).min(xMin).max(-0.01).step(0.1).name('xMin = ').onChange( displayRangeFunc );
+	xRangeFolder.add(this, 'upperXRange' ).min(0.01).max(xMax).step(0.1).name('xMax = ').onChange( displayRangeFunc );
+
+	
+	var yRangeFolder = optimaFolder.addFolder( "yMin <= R <= yMax" );
+	yRangeFolder.add(this, 'lowerYRange' ).min(yMin).max(-0.01).step(0.1).name('yMin = ').onChange( displayRangeFunc );
+	yRangeFolder.add(this, 'upperYRange' ).min(0.01).max(yMax).step(0.1).name('yMax = ').onChange( displayRangeFunc );
+
+	
+	
+	var cpFolderGUI = gui.addFolder( "Critical Points within Range (calculate first!)" );
 	
 	cpFolderGUI.add( this, 'displayCritPointsFunc' ).name("Calculate");
 	
@@ -504,6 +774,18 @@
 		}
 	);
 	
+	cpFolderGUI.add( this, "globalOptimaVisible" ).name("Global Optima").onChange(
+		function()
+		{
+			globalMaximaView.set("visible", globalOptimaVisible);
+			globalMaximaLabel.set("visible", globalOptimaVisible);
+			globalMaximaLocLabel.set("visible", globalOptimaVisible);
+			
+			globalMinimaView.set("visible", globalOptimaVisible);
+			globalMinimaLabel.set("visible", globalOptimaVisible);
+			globalMinimaLocLabel.set("visible", globalOptimaVisible);
+		}
+	);
 	
 	var traceFolderGUI = gui.addFolder( "Trace (x0,y0) point on graph");
 	
@@ -520,16 +802,6 @@
 	yPointGUI.onChange( displayTraceFunc );
 	
 	
-	traceFolderGUI.add( this, "tangentPlaneVisible" ).name("Tangent plane").onChange( 
-		function()
-		{
-			tangentPlaneViewSolid.set("visible", tangentPlaneVisible);
-			tangentPlaneViewWire.set("visible", tangentPlaneVisible);
-		}
-	 );	
-	
-	
-
 	<!-- ON LOAD -->
 	// Display the default graph on load, otherwise nothing will be displayed
 	displayGraphFunc();
