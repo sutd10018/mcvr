@@ -10,7 +10,6 @@ Contains the following modules:
 4. Multivariable chain rule
 5. Critical points
 6. EVT (Global optima)
-7. Volume/integral
-8. Line integral
+
 
 View website: https://sutd10018.github.io/mcvr/
