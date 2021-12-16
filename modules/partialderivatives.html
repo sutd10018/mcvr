@@ -55,7 +55,7 @@
 	// so remember to always use [x,z,y] instead of [x,y,z] in the code
     var view = mathbox.cartesian(
 	  {
-        range: [[xMin, xMax], [yMin, yMax], [zMin,zMax]],
+        range: [[xMin, xMax], [zMin,zMax], [yMin, yMax] ],
 		//scale for y axis should be negative since original mathbox yAxis (on z) is flipped
         scale: [2,1,-2],
       }
@@ -66,19 +66,19 @@
     var xScale = view.scale( {axis: 1, divide: xMax, nice:true, zero:true} );
     var xTicks = view.ticks( {width: 5, size: 15, color: "deeppink", zBias:2} );
     var xFormat = view.format( {digits: 2, font:"Helvetica", style: "normal", source: xScale} );
-    var xTicksLabel = view.label( {color: "deeppink", zIndex: 0, offset:[0,-20], outline: 0, size: 14, points: xScale, text: xFormat} );
+    var xTicksLabel = view.label( {color: "deeppink", zIndex: 1, offset:[0,-20], outline: 0, size: 14, points: xScale, text: xFormat} );
 	
 	var yAxis = view.axis( {axis: 3, width: 8, detail: 40, color:"greenyellow"} );
     var yScale = view.scale( {axis: 3, divide: yMax, nice:true, zero:false} );
     var yTicks = view.ticks( {width: 5, size: 15, color: "greenyellow", zBias:2} );
     var yFormat = view.format( {digits: 2, font:"Helvetica", style: "normal", source: yScale} );
-    var yTicksLabel = view.label( {color: "greenyellow", zIndex: 0, offset:[-20,0], outline: 0, size: 14, points: yScale, text: yFormat} );
+    var yTicksLabel = view.label( {color: "greenyellow", zIndex: 1, offset:[-20,0], outline: 0, size: 14, points: yScale, text: yFormat} );
 	
 	var zAxis = view.axis( {axis: 2, width: 8, detail: 40, color:"cyan"} );
     var zScale = view.scale( {axis: 2, divide: zMax, nice:true, zero:false} );
     var zTicks = view.ticks( {width: 5, size: 15, color: "cyan", zBias:2} );
     var zFormat = view.format( {digits: 2, font:"Helvetica", style: "normal", source: zScale} );
-    var zTicksLabel = view.label( {color: "cyan", zIndex: 0, offset:[20,0], outline: 0, size: 14, points: zScale, text: zFormat} );
+    var zTicksLabel = view.label( {color: "cyan", zIndex: 1, offset:[20,0], outline: 0, size: 14, points: zScale, text: zFormat} );
 	
 	// axis end labels
 	var xLabelText = view.text( {width:1, data:["x"], font: "Helvetica", style: "normal"} );
@@ -105,23 +105,10 @@
         },
     });
 	
-	// actual emitter set in displayGraph function
-	var graphColors = view.area({
-		expr: function (emit, x,y, i,j, t) 
-		{
-			if (x < 0)
-				emit(1.0, 0.0, 0.0, 1.0);
-		    else
-				emit(0.0, 1.0, 0.0, 1.0);
-		},
-		axes: [1,3],
-		width:  64, height: 64,
-		channels: 4, // RGBA
-    });
 	
 	var graphViewSolid = view.surface({
 		points:graphData, 
-		color:"#FFFFFF", shaded:false, fill:true, lineX:false, lineY:false, colors:graphColors, visible:true, width:0
+		color:"#FFFFFF", shaded:true, fill:true, lineX:true, lineY:true, visible:true, opacity: 0.8, width:0
 	});
 	
 	<!-- END OF SCENE SETUP ============================================================= -->
@@ -131,7 +118,6 @@
 	 
 	var functionText = "x^2*y"; // the function to parse
 	
-	var zAutofit = true; 
 	
 	var displayGraphFunc = function() 
 	{ 
@@ -143,58 +129,10 @@
 			}
 		);
 		
-		//autofit the scale of the graph so it fits to the screen nicely
-		if (zAutofit)
-		{
-			var xStep = (xMax - xMin) / 256;
-			var yStep = (yMax - yMin) / 256;
-			var zSmallest = f(xMin, yMin);
-			var zBiggest  = f(xMax, yMax);
-			
-			//for every possible x & combination, find the smallest & biggest z values
-			//infinity check is a must, otherwise when the equation results in infinity (eg divide by zero) then the graph cannot be plotted
-			//when the z value is infinite, we can assign our own value to scale the graph nicely (this is optional) 
-
-			for (var x = xMin; x <= xMax; x += xStep)
-			{
-				for (var y = yMin; y <= yMax; y += yStep)
-				{
-					var z = f(x,y);
-					if (z <= zSmallest && isFinite(z) == true){
-						zSmallest = z;
-					} else if (z <= zSmallest && isFinite(z) == false){ //optional
-						zSmallest = -256; //it can be any number since it's infinite
-					}
-					
-					if (z >= zBiggest && isFinite(z) == true) {
-						zBiggest = z;
-					} else if (z >= zBiggest && isFinite(z) == false){ //optional
-						zBiggest = 256; //it can be any number since it's infinite
-					}
-				}
-			}
-			
-			// change the global zMin var value to follow the smallest possible z val and
-			// global zMax var value to follow the biggest possible z val
-			zMin = zSmallest;
-			zMax = zBiggest;
-		}
-		
-	
 		view.set("range", [[xMin, xMax], [zMin,zMax], [yMin, yMax]]); 
 		
-		//set the graph color to greenish hue
-		graphColors.set("expr", 
-				function (emit, x, y, i, j, time) 
-				{ 
-					var z = f(x,y);
-					var percent = (z - zMin) / (zMax - zMin);
-					emit( percent, percent, percent, 0.8 );
-				}
-			);	
-		
-		
 		displayDerivativesFunc();
+		
 	}
 	
 	<!-- END OF DISPLAY GRAPH SETTING ===================================================== -->
@@ -202,31 +140,32 @@
    
    <!-- START OF DISPLAY DERIVATIVES SETTING ===================================================== -->
 
-	var xPoint = 0, yPoint = 0;
-	var traceX, traceY, traceZ;
+	var xPoint = 0, yPoint = 0, zPoint;
 
-	
 	var displayDerivativesFunc = function ()
 	
 	{
 		f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
 		
-		traceX = xPoint;
-		traceY = yPoint;
-		traceZ = f(traceX, traceY);
-		tracePointData.set("data", [ [traceX, traceZ, traceY] ] );
+		zPoint = f(xPoint, yPoint);
+		tracePointData.set("data", [ [xPoint, zPoint, yPoint] ] );
+		
+		var xPointDisp = Math.round(xPoint * 100) / 100;
+		var yPointDisp = Math.round(yPoint * 100) / 100;
+		
+		traceText.set("data", ["(" + xPointDisp + "," + yPointDisp + ")"]);
 
 		xCurveData.set("expr", 
 		    function (emit, x, i, t) 
 			{ 
-			    emit( x, f(x,traceY), traceY );
+			    emit( x, f(x,yPoint), yPoint );
 			}
 		);
 
 		yCurveData.set("expr", 
 		    function (emit, y, j, t) 
 			{ 
-			    emit( traceX, f(traceX,y), y );
+			    emit( xPoint, f(xPoint,y), y );
 			}
 		);
 		
@@ -234,20 +173,20 @@
 		// calculate partial derivatives
 		
 		// valid for all vectors
-		var vectorTail = [traceX, traceZ, traceY];
+		var vectorTail = [xPoint, zPoint, yPoint];
 		
 		// amount to scale slope vector by
-		var scale = 4
+		var scale = 2
 		
 		// partial derivative for x (y held constant)
 		// can the 2 vectors be simplified into just 1?
 		// currently the second vectorhead is to make a line facing the other way
 		var dx = 0.00001;
 		var dy = 0; // held constant for now
-		var dz = f(traceX + dx, traceY + dy) - f(traceX, traceY);
+		var dz = f(xPoint + dx, yPoint + dy) - f(xPoint, yPoint);
 		// slope vector is [dx/dx, dy/dx, dz/dx] = [1,0,dz/dx]. Don't forget to switch y&z in graph.
-		var xVectorHead = [traceX + scale * dx/dx, traceZ + scale * dz/dx, traceY + scale * dy/dx];
-		var xVectorHead2 = [traceX - scale * dx/dx, traceZ - scale * dz/dx, traceY + scale * dy/dx];
+		var xVectorHead = [xPoint + scale * dx/dx, zPoint + scale * dz/dx, yPoint + scale * dy/dx];
+		var xVectorHead2 = [xPoint - scale * dx/dx, zPoint - scale * dz/dx, yPoint + scale * dy/dx];
 		xDerivData.set( "data", [xVectorHead,vectorTail] );
 		xDerivData2.set( "data", [xVectorHead2,vectorTail] );
 		
@@ -256,10 +195,10 @@
 		// calculate partial derivative for y (x held constant)
 		dx = 0;
 		dy = 0.00001;
-		dz = f(traceX + dx, traceY + dy) - f(traceX, traceY);
+		dz = f(xPoint + dx, yPoint + dy) - f(xPoint, yPoint);
 		// slope vector is [dx/dx, dy/dx, dz/dx] = [0,1,dz/dy]. Don't forget to switch y&z in graph.
-		var yVectorHead = [traceX + scale * dx/dy, traceZ + scale * dz/dy, traceY + scale * dy/dy];
-		var yVectorHead2 = [traceX + scale * dx/dy, traceZ - scale * dz/dy, traceY - scale * dy/dy];
+		var yVectorHead = [xPoint + scale * dx/dy, zPoint + scale * dz/dy, yPoint + scale * dy/dy];
+		var yVectorHead2 = [xPoint + scale * dx/dy, zPoint - scale * dz/dy, yPoint - scale * dy/dy];
 		yDerivData.set( "data", [yVectorHead,vectorTail] );
 		yDerivData2.set( "data", [yVectorHead2,vectorTail] );
 		
@@ -277,9 +216,13 @@
 	  
 	// make point display optional (default is false)
 	var pointVisible = true;
-	var tracePointView = view.point( {size: 40, color: "white", points:tracePointData, visible: pointVisible} );
+	var tracePointView = view.point( {size: 40, color: "blue", points:tracePointData, visible: pointVisible, zIndex:2} );
 	
-	
+	var traceText = view.text( {width:1, data:["(0,0)"], font: "Helvetica", style: "normal"} );
+	var traceTextView = view.label( {text: traceText, points: tracePointData,
+      size: 14, color: "blue", outline: 0, offset: [0,-40], zIndex: 3, visible: pointVisible} );
+	  
+	  
 	
 	// draw curves on surface, in a plane parallel to axis, through trace point
 	var xCurveData = view.interval({
@@ -306,7 +249,7 @@
         axes: [1,5], channels: 3, width: 2, height: 2,
 		expr: function (emit, x, z, i, j, t)
 		{
-          emit( x, z, traceY );
+          emit( x, z, yPoint );
         },
     });
 	// zWrite: false, because of many transparent surfaces, need to draw correctly
@@ -320,7 +263,7 @@
         axes: [3,2], channels: 3, width: 2, height: 2,
 		expr: function (emit, y, z, i, j, t)
 		{
-          emit( traceX, z, y );
+          emit( xPoint, z, y );
         },
     });
 	var yPlaneVisible = false;
@@ -377,6 +320,16 @@
 	var gui = new dat.GUI();
 	
 	gui.add( this, 'functionText' ).name('z = f(x,y) = ');
+	
+	var setDisplayFolder = gui.addFolder('Display setting');
+	
+	setDisplayFolder.add( this, 'xMin' ).name("xMin");
+	setDisplayFolder.add( this, 'xMax' ).name("xMax");
+	setDisplayFolder.add( this, 'yMin' ).name("yMin");
+	setDisplayFolder.add( this, 'yMax' ).name("yMax");
+	setDisplayFolder.add( this, 'zMin' ).name("zMin");
+	setDisplayFolder.add( this, 'zMax' ).name("zMax");
+	
 	gui.add( this, 'displayGraphFunc' ).name("Update Graph");
 
 	gui.add( this, "yPlaneVisible" ).name("Show f(x0,y)").onChange( 
