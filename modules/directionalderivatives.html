@@ -10,6 +10,9 @@
   
   <!-- http://silentmatt.com/javascript-expression-evaluator/ -->
   <script src="js/parser.js"></script>
+  
+   <!-- https://mathjs.org/ -->
+  <script src="js/math.js"></script>
 
   <link rel="stylesheet" href="css/mathbox.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -192,7 +195,7 @@
 				}
 			);	
 		
-		displayDerivativesFunc();
+		displadyativesFunc();
 	}
 	
 	<!-- END OF DISPLAY GRAPH SETTING ===================================================== -->
@@ -200,58 +203,55 @@
    
 	<!-- START OF DISPLAY DERIVATIVES SETTING ===================================================== -->
 
-	var xPoint = 0, yPoint = 0;
-	var traceX, traceY, traceZ;
+	var xPoint = 0, yPoint = 0, zPoint;
 
 	var vectorU = 1;
 	var vectorV = 1;
 	
-	
-	var displayDerivativesFunc = function ()
+	var displadyativesFunc = function ()
 	
 	{
 		f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
 		
-		traceX = xPoint;
-		traceY = yPoint;
-		traceZ = f(traceX, traceY);
-		tracePointData.set("data", [ [traceX, traceZ, traceY] ] );
-		
+		zPoint = f(xPoint, yPoint);
+		tracePointData.set("data", [ [xPoint, zPoint, yPoint] ] );
 		
 		// calculate partial derivatives
 		
 		// valid for all vectors
-		var vectorTail = [traceX, traceZ, traceY];
+		var vectorTail = [xPoint, zPoint, yPoint];
 		
 		// amount to scale slope vector by
 		var scale = 1.5
 		
-		// partial derivative for x (y held constant)
-		var dx = 0.00001;
-		var dy = 0; // held constant for now
-		var dz = f(traceX + dx, traceY + dy) - f(traceX, traceY);
-		// slope vector is [dx/dx, dy/dx, dz/dx] = [1,0,dz/dx]. Don't forget to switch y&z in graph.
-		var xVectorHead = [traceX + scale * dx/dx, traceZ + scale * dz/dx, traceY + scale * dy/dx];
-		xDerivData.set( "data", [xVectorHead,vectorTail] );
+		//calculate the derivative of f(x,y) with respect to x
+		var dz_dx = math.derivative(functionText, 'x').evaluate({x: xPoint, y: yPoint}) ; 
 		
-		var slopeX = dz/dx;
+		//calculate the derivative of f(x,y) with respect to y
+		var dz_dy = math.derivative(functionText, 'y').evaluate({x: xPoint, y: yPoint}) ; 
 		
-		// calculate partial derivative for y (x held constant)
-		var dx2 = 0;
-		var dy2 = 0.00001;
-		var dz2 = f(traceX + dx2, traceY + dy2) - f(traceX, traceY);
-		// slope vector is [dx/dx, dy/dx, dz/dx] = [0,1,dz/dy]. Don't forget to switch y&z in graph.
-		var yVectorHead = [traceX + scale * dx2/dy2, traceZ + scale * dz2/dy2, traceY + scale * dy2/dy2];
-		yDerivData.set( "data", [yVectorHead,vectorTail] );
+		// plotting the derivative of f(x,y) with respect to x
+		// since y is held constant, slope vector is [1,0,dz_dx]
+		// don't forget that mathbox flips the y and z axis so it becomes [1,dz_dx,0]
+		var dxVectorHead = [xPoint + scale, zPoint + scale * dz_dx, yPoint];
+
+		dxData.set( "data", [dxVectorHead,vectorTail] );
+
 		
-		var slopeY = dz2/dy2;
+		// plotting the derivative of f(x,y) with respect to y
+		// since x is held constant, slope vector is [0,1,dz_dx]
+		// don't forget that mathbox flips the y and z axis so it becomes [0,dz_dx,1]
+		var dyVectorHead = [xPoint, zPoint + scale * dz_dy, yPoint + scale];
+
+		dyData.set( "data", [dyVectorHead,vectorTail] );
+
 		
 		
 		// calculate tangent plane function
 		tangentPlaneData.set("expr", 
 		    function (emit, x, y, i, j, t) 
 			{ 
-				var z = slopeX*(x - traceX) + slopeY*(y - traceY) + traceZ;
+				var z = dz_dx*(x - xPoint) + dz_dy*(y - yPoint) + zPoint;
 			    emit( x, z, y );
 			}
 		);
@@ -262,15 +262,15 @@
 		var magnitude = Math.sqrt(Math.pow(vectorU,2)+Math.pow(vectorV,2));
 		var unitVecU = vectorU / magnitude;
 		var unitVecV = vectorV / magnitude;
-		//unit vector has magnitude of 1, so traceZ is + 1
-		var dirVectorHead = [traceX + unitVecU, traceZ + 1, traceY + unitVecV];
+		//unit vector has magnitude of 1, so zPoint is + 1
+		var dirVectorHead = [xPoint + unitVecU, zPoint + 1, yPoint + unitVecV];
 		dirVectorData.set( "data", [dirVectorHead,vectorTail] );
 		
 		
 		// directional derivative (unit vector projected on surface/tangent plane)
-		var dz3 = slopeX * unitVecU + slopeY * unitVecV;
-		var gradientVectorHead = [traceX + unitVecU * scale, traceZ + dz3 * scale, traceY + unitVecV * scale];
-		var gradientVectorHead2 = [traceX - unitVecU * scale, traceZ - dz3 * scale, traceY - unitVecV * scale];
+		var dz = dz_dx * unitVecU + dz_dy * unitVecV;
+		var gradientVectorHead = [xPoint + unitVecU * scale, zPoint + dz * scale, yPoint + unitVecV * scale];
+		var gradientVectorHead2 = [xPoint - unitVecU * scale, zPoint - dz * scale, yPoint - unitVecV * scale];
 		gradientData.set( "data", [gradientVectorHead, vectorTail] );
 		gradientData2.set( "data", [gradientVectorHead2, vectorTail] );
 		
@@ -294,25 +294,25 @@
 	
 	// items:2, because vectors require two values each
 	// data: represents the head and tail of vector
-	var xDerivData = view.array({
+	var dxData = view.array({
 		width: 2, items: 2, channels: 3,
 		data: [ [0,0,0],[1,1,1] ],
 	});
-	var yDerivData = view.array({
+	var dyData = view.array({
 		width: 2, items: 2, channels: 3,
 		data: [ [0,0,0],[1,1,1] ], 
 	});
 	
 	
-	var xDerivVisible = false;
-	var xDerivView = view.vector({
-		points: xDerivData,
-		color: "fuchsia", width: 4, start: true, visible:xDerivVisible, zIndex: 1
+	var dxVisible = false;
+	var dxView = view.vector({
+		points: dxData,
+		color: "fuchsia", width: 6, start: true, visible:dxVisible, zIndex: 1
 	});
-	var yDerivVisible = false;
-	var yDerivView = view.vector({
-		points: yDerivData,
-		color: "chartreuse", width: 4, start: true, visible:yDerivVisible, zIndex: 1
+	var dyVisible = false;
+	var dyView = view.vector({
+		points: dyData,
+		color: "chartreuse", width: 6, start: true, visible:dyVisible, zIndex: 1
 	});
 	
 	// create data and view for tangent plane
@@ -349,12 +349,12 @@
 	var gradientVisible = false;
 	var gradientView = view.vector({
 		points: gradientData,
-		color: "orange", width: 6, start: false, visible:gradientVisible, zIndex: 1
+		color: "orange", width: 10, start: false, visible:gradientVisible, zIndex: 1
 	});
 	
 	var gradientView2 = view.vector({
 		points: gradientData2,
-		color: "orange", width: 4, start: false, visible:gradientVisible, zIndex: 1
+		color: "orange", width: 10, start: false, visible:gradientVisible, zIndex: 1
 	});
 	
 	
@@ -365,7 +365,7 @@
 	var dirVectorVisible = false;
 	var dirVectorView = view.vector({
 		points: dirVectorData,
-		color: "white", width: 4, start: true, visible:dirVectorVisible, zIndex: 1
+		color: "white", width: 12, start: true, visible:dirVectorVisible, zIndex: 1
 	});
 	
 	<!-- END OF DISPLAY DERIVATIVES SETTING ===================================================== -->
@@ -387,23 +387,23 @@
 		}
 	);
 	var xPointGUI = gui.add( this, 'xPoint' ).min(xMin).max(xMax).step(0.01).name('x0 = ');
-	xPointGUI.onChange( displayDerivativesFunc );
+	xPointGUI.onChange( displadyativesFunc );
 	var yPointGUI = gui.add( this, 'yPoint' ).min(yMin).max(yMax).step(0.01).name('y0 = ');
-	yPointGUI.onChange( displayDerivativesFunc );
+	yPointGUI.onChange( displadyativesFunc );
 
 
-	gui.add( this, "xDerivVisible" ).name("x dir-derivative").onChange( 
+	gui.add( this, "dxVisible" ).name("x dir-derivative").onChange( 
 		function()
 		{
-			xDerivView.set("visible", xDerivVisible);
+			dxView.set("visible", dxVisible);
 			
 		}
 	 );
 	 
-	gui.add( this, "yDerivVisible" ).name("y dir-derivative").onChange( 
+	gui.add( this, "dyVisible" ).name("y dir-derivative").onChange( 
 		function()
 		{
-			yDerivView.set("visible", yDerivVisible);
+			dyView.set("visible", dyVisible);
 			
 		}
 	 ); 
@@ -444,9 +444,9 @@
 	dirVectorFolder.add( this, "vectorGuide" ).name("Vector input guide");
 	
 	var vectorUGUI = dirVectorFolder.add( this, 'vectorU' ).min(xMin).max(xMax).step(1).name('vector a = ');
-	vectorUGUI.onChange( displayDerivativesFunc );
+	vectorUGUI.onChange( displadyativesFunc );
 	var vectorVGUI = dirVectorFolder.add( this, 'vectorV' ).min(yMin).max(yMax).step(1).name('vector b = ');
-	vectorVGUI.onChange( displayDerivativesFunc );
+	vectorVGUI.onChange( displadyativesFunc );
 	
 	dirVectorFolder.open();
 	

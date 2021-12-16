@@ -10,6 +10,9 @@
   
   <!-- http://silentmatt.com/javascript-expression-evaluator/ -->
   <script src="js/parser.js"></script>
+  
+  <!-- https://mathjs.org/ -->
+  <script src="js/math.js"></script>
 
   <link rel="stylesheet" href="css/mathbox.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -92,7 +95,7 @@
       size: 18, color: "greenyellow", outline: 0, offset: [-10, 20], zIndex: 1} );
 	  
 	// view semi-transparent grid at z=0
-	view.grid( {axes:[1,3], width: 2, divideX: 20, divideY: 20, opacity:0.25} );
+	view.grid( {axes:[1,3], width: 0.5, divideX: 20, divideY: 20, opacity:0.1} );
 	
 	 
 	<!-- graph Color setting -->
@@ -178,32 +181,27 @@
 		// amount to scale slope vector by
 		var scale = 2
 		
-		// partial derivative for x (y held constant)
-		// can the 2 vectors be simplified into just 1?
-		// currently the second vectorhead is to make a line facing the other way
-		var dx = 0.00001;
-		var dy = 0; // held constant for now
-		var dz = f(xPoint + dx, yPoint + dy) - f(xPoint, yPoint);
-		// slope vector is [dx/dx, dy/dx, dz/dx] = [1,0,dz/dx]. Don't forget to switch y&z in graph.
-		var xVectorHead = [xPoint + scale * dx/dx, zPoint + scale * dz/dx, yPoint + scale * dy/dx];
-		var xVectorHead2 = [xPoint - scale * dx/dx, zPoint - scale * dz/dx, yPoint + scale * dy/dx];
-		xDerivData.set( "data", [xVectorHead,vectorTail] );
-		xDerivData2.set( "data", [xVectorHead2,vectorTail] );
+		//calculate the derivative of f(x,y) with respect to x
+		var dz_dx = math.derivative(functionText, 'x').evaluate({x: xPoint, y: yPoint}) ; 
 		
-		var slopeX = dz/dx;
+		//calculate the derivative of f(x,y) with respect to y
+		var dz_dy = math.derivative(functionText, 'y').evaluate({x: xPoint, y: yPoint}) ; 
 		
-		// calculate partial derivative for y (x held constant)
-		dx = 0;
-		dy = 0.00001;
-		dz = f(xPoint + dx, yPoint + dy) - f(xPoint, yPoint);
-		// slope vector is [dx/dx, dy/dx, dz/dx] = [0,1,dz/dy]. Don't forget to switch y&z in graph.
-		var yVectorHead = [xPoint + scale * dx/dy, zPoint + scale * dz/dy, yPoint + scale * dy/dy];
-		var yVectorHead2 = [xPoint + scale * dx/dy, zPoint - scale * dz/dy, yPoint - scale * dy/dy];
-		yDerivData.set( "data", [yVectorHead,vectorTail] );
-		yDerivData2.set( "data", [yVectorHead2,vectorTail] );
+		// plotting the derivative of f(x,y) with respect to x
+		// since y is held constant, slope vector is [1,0,dz_dx]
+		// don't forget that mathbox flips the y and z axis so it becomes [1,dz_dx,0]
+		var dxVectorHead = [xPoint + scale, zPoint + scale * dz_dx, yPoint];
+		var dxVectorHead2 = [xPoint - scale, zPoint - scale * dz_dx, yPoint];
+		dxData.set( "data", [dxVectorHead,vectorTail] );
+		dxData2.set( "data", [dxVectorHead2,vectorTail] );
 		
-		var slopeY = dz/dy;
-		
+		// plotting the derivative of f(x,y) with respect to y
+		// since x is held constant, slope vector is [0,1,dz_dx]
+		// don't forget that mathbox flips the y and z axis so it becomes [0,dz_dx,1]
+		var dyVectorHead = [xPoint, zPoint + scale * dz_dy, yPoint + scale];
+		var dyVectorHead2 = [xPoint, zPoint - scale * dz_dy, yPoint - scale];
+		dyData.set( "data", [dyVectorHead,vectorTail] );
+		dyData2.set( "data", [dyVectorHead2,vectorTail] );
 		
 	}
 	
@@ -276,19 +274,19 @@
 	
 	// items:2, because vectors require two values each
 	// data: represents the head and tail of vector
-	var xDerivData = view.array({
+	var dxData = view.array({
 		width: 2, items: 2, channels: 3,
 		data: [ [0,0,0],[1,1,1] ],
 	});
-	var xDerivData2 = view.array({
+	var dxData2 = view.array({
 		width: 2, items: 2, channels: 3,
 		data: [ [0,0,0],[1,1,1] ],
 	});
-	var yDerivData = view.array({
+	var dyData = view.array({
 		width: 2, items: 2, channels: 3,
 		data: [ [0,0,0],[1,1,1] ], 
 	});
-	var yDerivData2 = view.array({
+	var dyData2 = view.array({
 		width: 2, items: 2, channels: 3,
 		data: [ [0,0,0],[1,1,1] ], 
 	});
@@ -296,20 +294,20 @@
 	
 	var xDerivVisible = false;
 	var xDerivView = view.vector({
-		points: xDerivData,
+		points: dxData,
 		color: "fuchsia", width: 12, start: false, visible:xDerivVisible, zIndex:2
 	});
 	var xDerivView2 = view.vector({
-		points: xDerivData2,
+		points: dxData2,
 		color: "fuchsia", width: 12, start: false, visible:xDerivVisible, zIndex:2
 	});
 	var yDerivVisible = false;
 	var yDerivView = view.vector({
-		points: yDerivData,
+		points: dyData,
 		color: "cyan", width: 12, start: false, visible:yDerivVisible, zIndex:2
 	});
 	var yDerivView2 = view.vector({
-		points: yDerivData2,
+		points: dyData2,
 		color: "cyan", width: 12, start: false, visible:yDerivVisible, zIndex:2
 	});
 	
