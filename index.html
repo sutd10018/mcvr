@@ -57,10 +57,74 @@
 		
 		<br>
 		<hr class="w3-border-grey" style="margin:auto">
+		
 		<br>
+		<div class="w3-container w3-center w3-padding">
+			<div class="w3-padding">
+				<button onclick="document.getElementById('instructionsModal').style.display='block'" class="w3-button w3-blue">General Instructions</button>
+				<span> &nbsp;  &nbsp;</span>
+				<button onclick="document.getElementById('typingguideModal').style.display='block'" class="w3-button w3-blue">Typing Equation: Guide</button>
+			</div>
+		</div>
+	</div>
+	<div id="instructionsModal" class="w3-modal">
+		<div class="w3-modal-content w3-animate-top w3-card-4">
+			<header class="w3-container w3-blue"> 
+				<span onclick="document.getElementById('instructionsModal').style.display='none'" 
+				class="w3-button w3-hover-red w3-xlarge w3-display-topright">&times;</span>
+				<h2>How to use the visualisation modules:</h2>
+			</header>
+			<div class="w3-container w3-white w3-row-padding">
+				<div class="w3-col w3-third">
+					<p>1) To change the graph, type in a new equation then press "Update graph"</p>
+					<img src="img/01_change.gif" alt="Change equation" style="max-width:200px">
+					<p>4) Rotate, zoom in/out of the graph using mouse or touchscreen</p>
+					<img src="img/04_rotate.gif" alt="Rotate graph" style="max-width:200px">
+					<p></p>
+				</div>
+				<div class="w3-col w3-third">
+					<p>2) Select the checkboxes in the GUI (controller) to see the visualisations</p>
+					<img src="img/02_tick.gif" alt="Update parameter" style="max-width:200px">
+					<p>5) To view in Cardboard VR, close the controllers and press Cardboard logo</p>
+					<img src="img/05_cardboard.gif" alt="Cardboard mode" style="max-width:200px">
+					<p></p>
+				</div>
+				<div class="w3-col w3-third">
+					<p>3) Some values with sliders can be typed manually with text input</p>
+					<img src="img/03_slider.gif" alt="Use sliders" style="max-width:200px">
+					<p>6) You can also view in XR mode using Oculus Rift/Quest and HTC Vive<p>
+					<img src="img/06_xr.gif" alt="XR mode" style="max-width:200px">
+					<p></p>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div id="typingguideModal" class="w3-modal">
+		<div class="w3-modal-content w3-animate-top w3-card-4">
+			<header class="w3-container w3-blue"> 
+				<span onclick="document.getElementById('typingguideModal').style.display='none'" 
+				class="w3-button w3-hover-red w3-xlarge w3-display-topright">&times;</span>
+				<h2>How to type in the equations:</h2>
+			</header>
+			<div class="w3-white w3-padding">
+				<p>You can generally use most types of equations, including:</p>
+				<li style="margin-left: 40px;">Planes (e.g. 5*x+3*y-8)</li>
+				<li style="margin-left: 40px;">Powers (e.g. (2*x^2)+y^3)</li>
+				<li style="margin-left: 40px;">Square root (e.g. sqrt(x^2+y^2))</li>
+				<li style="margin-left: 40px;">Trigonometric functions (e.g. sin(x^2+y^2), cos(x-(y/2)))</li>
+				<li style="margin-left: 40px;">e (use <b>capital E</b>, e.g. cos(x)*(cos(y)*E))</li>
+				<li style="margin-left: 40px;">&#960; (use <b>capital PI</b>, e.g. PI*x^2+y)</li>
+				<br>
+				<p>To reduce ambiguity, use more explicit parentheses, e.g. use (2*x^2)+(y^3) instead of just 2*x^2+y^3 </p>
+			</div>
+		</div>
 	</div>
 </div>
-  
+ 
+
+ 
+ 
+ 
 <script>
 function myFunction(id) {
   var x = document.getElementById(id);
