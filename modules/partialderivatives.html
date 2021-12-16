@@ -51,7 +51,7 @@
 	
     // set the boundaries/scale of the graph display
 	// zMin & zMax values are just placeholder, they would be replaced in later function if autofit is true
-	var	xMin = -8, xMax = 8, yMin = -8,	yMax = 8, zMin = -10, zMax = 10;
+	var	xMin = -8, xMax = 8, yMin = -8,	yMax = 8, zMin = -20, zMax = 20;
 	
 	// set the display view with mathbox
 	// note that by default, mathbox y & z axis references are switched,
@@ -78,7 +78,7 @@
     var yTicksLabel = view.label( {color: "greenyellow", zIndex: 1, offset:[-20,0], outline: 0, size: 14, points: yScale, text: yFormat} );
 	
 	var zAxis = view.axis( {axis: 2, width: 8, detail: 40, color:"cyan"} );
-    var zScale = view.scale( {axis: 2, divide: zMax, nice:true, zero:false} );
+    var zScale = view.scale( {axis: 2, divide: zMax/2, nice:true, zero:false} );
     var zTicks = view.ticks( {width: 5, size: 15, color: "cyan", zBias:2} );
     var zFormat = view.format( {digits: 2, font:"Helvetica", style: "normal", source: zScale} );
     var zTicksLabel = view.label( {color: "cyan", zIndex: 1, offset:[20,0], outline: 0, size: 14, points: zScale, text: zFormat} );
@@ -119,7 +119,7 @@
 	<!-- START OF DISPLAY GRAPH SETTING ==================================================== -->
 	// to display the basic graph
 	 
-	var functionText = "x^2*y"; // the function to parse
+	var functionText = "x^4+(2*x*y)"; // the function to parse
 	
 	
 	var displayGraphFunc = function() 
