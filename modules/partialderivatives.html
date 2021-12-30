@@ -5,14 +5,16 @@
   <title>Partial derivatives</title>
   
 	<!-- modified from https://github.com/unconed/mathbox -->
-  <script src="js/mathbox-bundle.js"></script>
-  <script src="js/dat.gui.js"></script>
+  <script src="js/libraries/mathbox-bundle.js"></script>
+  <script src="js/libraries/dat.gui.js"></script>
   
   <!-- http://silentmatt.com/javascript-expression-evaluator/ -->
-  <script src="js/parser.js"></script>
+  <script src="js/libraries/parser.js"></script>
   
   <!-- https://mathjs.org/ -->
-  <script src="js/math.js"></script>
+  <script src="js/libraries/math.js"></script>
+  
+  <script src="js/graph.js"></script>
 
   <link rel="stylesheet" href="css/mathbox.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -51,7 +53,7 @@
 	
     // set the boundaries/scale of the graph display
 	// zMin & zMax values are just placeholder, they would be replaced in later function if autofit is true
-	var	xMin = -8, xMax = 8, yMin = -8,	yMax = 8, zMin = -20, zMax = 20;
+	var	xMin = -3, xMax = 3, yMin = -3,	yMax = 3, zMin = -20, zMax = 20;
 	
 	// set the display view with mathbox
 	// note that by default, mathbox y & z axis references are switched,
@@ -108,10 +110,22 @@
         },
     });
 	
+  var graphColors = view.area({
+		expr: function (emit, x,y, i,j, t) 
+		{
+			if (x < 0)
+				emit(1.0, 0.0, 0.0, 1.0);
+		    else
+				emit(0.0, 1.0, 0.0, 1.0);
+		},
+		axes: [1,3],
+		width:  64, height: 64,
+		channels: 4, // RGBA
+    });
 	
 	var graphViewSolid = view.surface({
 		points:graphData, 
-		color:"#FFFFFF", shaded:true, fill:true, lineX:true, lineY:true, visible:true, opacity: 0.8, width:0
+		color:"#FFFFFF", shaded:false, fill:true, lineX:false, lineY:false, colors:graphColors, visible:true, width:0
 	});
 	
 	<!-- END OF SCENE SETUP ============================================================= -->
@@ -121,22 +135,7 @@
 	 
 	var functionText = "x^4+(2*x*y)"; // the function to parse
 	
-	
-	var displayGraphFunc = function() 
-	{ 
-		var f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
-		graphData.set("expr", 
-		    function (emit, x, y, i, j, time) 
-			{ 
-			    emit( x, f(x,y), y );
-			}
-		);
-		
-		view.set("range", [[xMin, xMax], [zMin,zMax], [yMin, yMax]]); 
-		
-		displayDerivativesFunc();
-		
-	}
+  var zAutofit = false;
 	
 	<!-- END OF DISPLAY GRAPH SETTING ===================================================== -->
    
@@ -144,67 +143,7 @@
    <!-- START OF DISPLAY DERIVATIVES SETTING ===================================================== -->
 
 	var xPoint = 0, yPoint = 0, zPoint;
-
-	var displayDerivativesFunc = function ()
-	
-	{
-		f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
-		
-		zPoint = f(xPoint, yPoint);
-		tracePointData.set("data", [ [xPoint, zPoint, yPoint] ] );
-		
-		var xPointDisp = Math.round(xPoint * 100) / 100;
-		var yPointDisp = Math.round(yPoint * 100) / 100;
-		
-		traceText.set("data", ["(" + xPointDisp + "," + yPointDisp + ")"]);
-
-		xCurveData.set("expr", 
-		    function (emit, x, i, t) 
-			{ 
-			    emit( x, f(x,yPoint), yPoint );
-			}
-		);
-
-		yCurveData.set("expr", 
-		    function (emit, y, j, t) 
-			{ 
-			    emit( xPoint, f(xPoint,y), y );
-			}
-		);
-		
-		
-		// calculate partial derivatives
-		
-		// valid for all vectors
-		var vectorTail = [xPoint, zPoint, yPoint];
-		
-		// amount to scale slope vector by
-		var scale = 2
-		
-		//calculate the derivative of f(x,y) with respect to x
-		var dz_dx = math.derivative(functionText, 'x').evaluate({x: xPoint, y: yPoint}) ; 
-		
-		//calculate the derivative of f(x,y) with respect to y
-		var dz_dy = math.derivative(functionText, 'y').evaluate({x: xPoint, y: yPoint}) ; 
-		
-		// plotting the derivative of f(x,y) with respect to x
-		// since y is held constant, slope vector is [1,0,dz_dx]
-		// don't forget that mathbox flips the y and z axis so it becomes [1,dz_dx,0]
-		var dxVectorHead = [xPoint + scale, zPoint + scale * dz_dx, yPoint];
-		var dxVectorHead2 = [xPoint - scale, zPoint - scale * dz_dx, yPoint];
-		dxData.set( "data", [dxVectorHead,vectorTail] );
-		dxData2.set( "data", [dxVectorHead2,vectorTail] );
-		
-		// plotting the derivative of f(x,y) with respect to y
-		// since x is held constant, slope vector is [0,1,dz_dx]
-		// don't forget that mathbox flips the y and z axis so it becomes [0,dz_dx,1]
-		var dyVectorHead = [xPoint, zPoint + scale * dz_dy, yPoint + scale];
-		var dyVectorHead2 = [xPoint, zPoint - scale * dz_dy, yPoint - scale];
-		dyData.set( "data", [dyVectorHead,vectorTail] );
-		dyData2.set( "data", [dyVectorHead2,vectorTail] );
-		
-	}
-	
+  
 	// plot a point on the graph.
 	
 	var tracePointData = view.array({
@@ -318,6 +257,7 @@
 	var gui = new dat.GUI();
 	
 	gui.add( this, 'functionText' ).name('z = f(x,y) = ');
+	gui.add( this, 'displayGraphFunc' ).name("Update Graph").onChange(displayDerivativesFunc);
 	
 	var setDisplayFolder = gui.addFolder('Display setting');
 	
@@ -328,16 +268,15 @@
 	setDisplayFolder.add( this, 'zMin' ).name("zMin");
 	setDisplayFolder.add( this, 'zMax' ).name("zMax");
 	
-	gui.add( this, 'displayGraphFunc' ).name("Update Graph");
 
-	gui.add( this, "yPlaneVisible" ).name("Show f(x0,y)").onChange( 
+	gui.add( this, "yPlaneVisible" ).name("Show z = f(x0,y)").onChange( 
 		function()
 		{
 			yPlaneView.set("visible", yPlaneVisible);
 			yCurveView.set("visible", yPlaneVisible);
 		}
 	 );
-	gui.add( this, "yDerivVisible" ).name("Show fy(x0,y)").onChange( 
+	gui.add( this, "yDerivVisible" ).name("Show Fy(x0,y)").onChange( 
 		function()
 		{
 			yDerivView.set("visible", yDerivVisible);
@@ -345,14 +284,14 @@
 		}
 	 ); 
 	 
-	gui.add( this, "xPlaneVisible" ).name("Show f(x,y0)").onChange( 
+	gui.add( this, "xPlaneVisible" ).name("Show z = f(x,y0)").onChange( 
 		function()
 		{
 			xPlaneView.set("visible", xPlaneVisible);
 			xCurveView.set("visible", xPlaneVisible);
 		}
 	 );
-	gui.add( this, "xDerivVisible" ).name("Show fx(x,y0)").onChange( 
+	gui.add( this, "xDerivVisible" ).name("Show Fx(x,y0)").onChange( 
 		function()
 		{
 			xDerivView.set("visible", xDerivVisible);
@@ -365,6 +304,9 @@
 
 	var yPointGUI = gui.add( this, 'yPoint' ).min(yMin).max(yMax).step(0.01).name('y0 = ');
 	yPointGUI.onChange( displayDerivativesFunc );
+  
+  var colorGraph = true;
+  var colorGraphGUI = gui.add( this, 'colorGraph' ).name("Toggle GraphColor").onChange(toggleGraphColorFunc);
 	
 
 	gui.add( this, "pointVisible" ).name("Show (x0,y0)").onChange(
@@ -377,7 +319,7 @@
 	<!-- ON LOAD ===================================================== -->
 		
 	displayGraphFunc();
-
+  displayDerivativesFunc();
 	
 	</script>
 
