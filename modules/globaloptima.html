@@ -3,14 +3,16 @@
 <head>
   <meta charset="utf-8">
   <title>EVT (Global Optima)</title>
-  <script src="js/mathbox-bundle.js"></script>
-  <script src="js/dat.gui.js"></script>
+  <script src="js/libraries/mathbox-bundle.js"></script>
+  <script src="js/libraries/dat.gui.js"></script>
 
   <!-- http://silentmatt.com/javascript-expression-evaluator/ -->
-  <script src="js/parser.js"></script>
+  <script src="js/libraries/parser.js"></script>
 
   <!-- https://mathjs.org/ -->
-  <script src="js/math.js"></script>
+  <script src="js/libraries/math.js"></script>
+  
+  <script src="js/graph.js"></script>
 
   <link rel="stylesheet" href="css/mathbox.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -133,68 +135,9 @@
 	var zAutofit = true; 
 	
 	var critPointsArray = [];
-	
-	var displayGraphFunc = function() 
-	{ 
-		var f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
-		graphData.set("expr", 
-		    function (emit, x, y, i, j, time) 
-			{ 
-			    emit( x, f(x,y), y );
-			}
-		);
-		
-		//autofit the scale of the graph so it fits to the screen nicely
-		if (zAutofit)
-		{
-			var xStep = (xMax - xMin) / 256;
-			var yStep = (yMax - yMin) / 256;
-			var zSmallest = f(xMin, yMin);
-			var zBiggest  = f(xMax, yMax);
-			
-			//for every possible x & combination, find the smallest & biggest z values
-			//infinity check is a must, otherwise when the equation results in infinity (ie divide by zero) then the graph cannot be plotted
-			//when the z value is infinite, we can assign our own value to scale the graph nicely (this is optional) 
-			for (var x = xMin; x <= xMax; x += xStep)
-			{
-				for (var y = yMin; y <= yMax; y += yStep)
-				{
-					var z = f(x,y);
-					if (z <= zSmallest && isFinite(z) == true){
-						zSmallest = z;
-					} else if (z <= zSmallest && isFinite(z) == false){ //optional
-						zSmallest = -256; //it can be any number since it's infinite
-					}
-					
-					if (z >= zBiggest && isFinite(z) == true) {
-						zBiggest = z;
-					} else if (z >= zBiggest && isFinite(z) == false){ //optional
-						zBiggest = 256; //it can be any number since it's infinite
-					}
-				}
-			}
-			
-			// change the global zMin var value to follow the smallest possible z val and
-			// global zMax var value to follow the biggest possible z val
-			zMin = zSmallest;
-			zMax = zBiggest;
-		}
-		
-	
-		view.set("range", [[xMin, xMax], [zMin,zMax], [yMin, yMax]]); 
-		
-		//set the graph color to rainbow that dynamically changes with value
-		//use HSL so it's easier to scale (use percent) instead of RGB
-		graphColors.set("expr",
-				function (emit, x, y, i, j, t)
-				{
-					var z = f(x,y);
-					var percent = (z - zMin) / (zMax - zMin);
-					emit( percent, percent, percent, 0.8 );
-				}
-			);
-		
-	
+  
+  var displayGraphFollowUp = function(){
+    
 		displayRangeFunc();
 		
 		//reset the points data/array whenever the graph is updated with new equation
@@ -209,9 +152,7 @@
 		
 
 		displayTraceFunc();
-		
-		
-	}
+  }
 	<!-- END OF DISPLAY GRAPH SETTING ===================================================== -->
 	
 	
@@ -219,48 +160,6 @@
 	
 	var lowerXRange = -2, upperXRange = 2, lowerYRange = -2, upperYRange = 2; 
 	
-	var displayRangeFunc = function()
-	{
-		f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
-		
-		xMinCurveData.set("expr", 
-		    function (emit, y, j, t) 
-			{ 
-			    emit( lowerXRange, f(lowerXRange,y), y );
-			}
-		);
-		xMinCurveText.set("data", ["xMin = " + Math.round(lowerXRange * 100) / 100]);
-
-		xMaxCurveData.set("expr", 
-		    function (emit, y, j, t) 
-			{ 
-			    emit( upperXRange, f(upperXRange,y), y );
-			}
-		);
-		xMaxCurveText.set("data", ["xMax = " + Math.round(upperXRange * 100) / 100]);
-		
-		yMinCurveData.set("expr", 
-		    function (emit, x, i, t) 
-			{ 
-			    emit( x, f(x,lowerYRange), lowerYRange );
-			}
-		);
-		yMinCurveText.set("data", ["yMin = " + Math.round(lowerYRange * 100) / 100]);
-		
-		yMaxCurveData.set("expr", 
-		    function (emit, x, i, t) 
-			{ 
-			    emit( x, f(x,upperYRange), upperYRange );
-			}
-		);
-		yMaxCurveText.set("data", ["yMax = " + Math.round(upperYRange * 100) / 100]);
-		
-		
-		
-		
-		
-		
-	}
 	
 	// plot curves (boundaries) on graph  
 
@@ -330,130 +229,14 @@
 	<!-- END OF CURVE (RANGE DOMAIN) DISPLAY  ==================================================== -->
 	
 	
-   
-	<!-- START OF CRITICAL PTS CALC  ==================================================== -->
-	
-	// the function to calculate possible critical points within a set range
-	// note this function would return an array of points only
-	// it does not result in the points plotted to the graph (yet)
-	function critPointsCalc(xMin, xMax, yMin, yMax, f) 
-	{	
-		 fx = math.derivative(functionText, 'x') ; 
-		 fy = math.derivative(functionText, 'y') ; 
-		
-		var step = 0.01; // density or granularity of search
-		var points = [];
-
-		// for every possible x (with increment of "step") within xRange
-		for (var x = xMin; x <= xMax; x += step) 
-		{	
-			// combined with every possible y (with increment of "step") within yRange
-			for (var y = yMin; y <= yMax; y += step) 
-			{ 
-				var z = f(x,y); // calculate the z val of this combination
-
-				let scope = {x:x, y:y}; // to calculate the fx and fy values of this combination
-			
-				var dzx = fx.evaluate(scope) ;
-				var dzdx = Math.round(dzx * 100) / 100; //rounded to remove noise
-	
-				var dzy = fy.evaluate(scope) ;
-				var dzdy = Math.round(dzy * 100) / 100; //rounded to remove noise
-				
-				var xRound = Math.round(x * 100) / 100;
-				var yRound = Math.round(y * 100) / 100;
-				var zRound = Math.round(z * 100) / 100;
-				
-				if (dzdx == 0 && dzdy == 0) {
-					points.push( [xRound,zRound,yRound] );
-				}
-			}
-		}
-		return points;
-	}
-	
-	<!-- END OF CRITICAL PTS CALC  ==================================================== -->	
-	
-	
    <!-- START OF CRITICAL PTS DISPLAY  ==================================================== -->
 	
 	var critPointsDispArray = []; // to transfer the points from critpoint calc for displaying on graph (in the order of x,z,y per index)
 	var critPointsLabelArray = []; // to transfer re-indexed x,y points from the above array
 	var critPointsClassArray = []; // to store the calculations of crit points classifications
-
-	
-	var displayCritPointsFunc = function ()
-	{
-		// create alert first before calculating the critical points, for better UX
-		// since calculations will be quite slow, especially for more complex equations
-		// further UX improvements can include a loading/buffer screen while calculating
-		alert("Critical points will be calculated upon closing this alert.\n\nThis will take a while.\n\nDO NOT refresh the page or press any other buttons while it's loading as it will slow down the process.");
-		
-		f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
-		
-		var fx = math.derivative(functionText, 'x')  ; 
-		var fy = math.derivative(functionText, 'y')  ; 
-		
-		var fxx = math.derivative(fx, 'x');
-		var fyy = math.derivative(fy, 'y');
-		var fxy = math.derivative(fx, 'y');
-		
-		// emptying the array first for every time the function is called
-		// so that there's no lingering from previous equation
-		critPointsDispArray = [];
-
-		
-		// now we transfer the points values from the calculation
-		// for this module, we just calculate the critical points within the boundary R
-		critPointsDispArray = critPointsCalc( lowerXRange, upperXRange, lowerYRange, upperYRange, f);
-		
-		critPointData.set( "width", critPointsDispArray.length);
-		critPointData.set( "data", critPointsDispArray); // remember that it's x,z,y for plotting the points with Mathbox
-		
-		// now we are re-indexing the critPointsDispArray
-		// for labeling purposes, we want to display the point locations in their proper format x,y (z is not needed)
-		critPointsLabelArray = [];
-		critPointsClassArray = [];
-		
-		for (var m = 0; m < critPointsDispArray.length; m++)
-		{
-			var xPoint = critPointsDispArray[m][0];
-			var yPoint = critPointsDispArray[m][2];  // remember that y point is stored in [2] index
-			
-			critPointsLabelArray.push( [ "(" + xPoint + "," + yPoint + ")" ] );
-			
-			
-			var fxxVal = fxx.evaluate({x: xPoint, y: yPoint}) ;
-			var fxx0 = Math.round(fxxVal * 100) / 100;
-
-			var fyyVal = fyy.evaluate({x: xPoint, y: yPoint}) ;
-			var fyy0 = Math.round(fyyVal * 100) / 100;
-
-			var fxyVal = fxy.evaluate({x: xPoint, y: yPoint}) ;
-			var fxy0 = Math.round(fxyVal * 100) / 100;
-
-			var H = fxx0 * fyy0 - Math.pow(fxy0,2);
-
-			if (H == 0) {
-				critPointsClassArray.push( "undefined" );
-			} else if (H < 0) {
-				critPointsClassArray.push( "saddle point" );
-				
-			} else if (H > 0) {
-				if (fxx0 < 0) {
-					critPointsClassArray.push( "maxima" );
-
-				} else if (fxx0 > 0) {
-					critPointsClassArray.push( "minima" );
-
-				}
-			}	
-		}
-		
-		critPointLocText.set( "width", critPointsLabelArray.length);
-
-		critPointClassText.set( "width", critPointsClassArray.length);
-
+ 
+  var displayCritPointsFollowUp = function(){
+  
 		globalMaximaArray = [];
 		globalMaximaData.set("data",[globalMaximaArray]);
 		
@@ -468,8 +251,7 @@
 		optimaArray = OptimaCalcFunc(lowerXRange, upperXRange, lowerYRange, upperYRange, f);
 		
 		OptimaDisplayFunc();
-
-	}
+    }
 	
 	var critPointData = view.array({
 		width: critPointsDispArray.length, //the amt of points to be displayed
@@ -527,22 +309,7 @@
 	// for this function, we actually just need to find the max Z value and min Z value of a function within the set Range
 	// there is no need to tie it to critical points calculations, we just use Javascript min & max array calculations
 	
-	// first we find possible z values of every x & y within the Range
-	var OptimaCalcFunc = function(xMin, xMax, yMin, yMax, f)
-	{
-		var points = [];
-		var step = 1;
 	
-		for (var x=xMin; x <= xMax; x += step)
-		{
-			for (var y=yMin; y <= yMax; y += step)
-			{
-				var z = f(x,y);
-				points.push([x,z,y]);
-			}
-		}
-		return points;
-	}
 	
 	var optimaArray = [];
 	
@@ -551,52 +318,6 @@
 	
 	var globalMaximaLocArray = [];
 	var globalMinimaLocArray = [];
-	
-	var OptimaDisplayFunc = function()
-	{
-		
-		//we run through the z values in optimaArray first
-		var zPointsArray = [];
-		for (var u = 0; u < optimaArray.length; u++) 
-		{
-			zPointsArray.push(optimaArray[u][1]);
-		}
-		
-		//then we find what is the biggest Z value and the smallest Z value
-		var max = Math.max(...zPointsArray);
-		var min = Math.min(...zPointsArray);
-			
-		for (var v = 0; v < optimaArray.length; v++) 
-		{	
-			var globalX = Math.round(optimaArray[v][0] * 100) / 100;
-			var globalY = Math.round(optimaArray[v][2] * 100) / 100;
-			
-			if (optimaArray[v][1] == max)
-			{
-				globalMaximaArray.push(optimaArray[v]);
-				globalMaximaLocArray.push([ "(" + globalX + "," + globalY + ")" ]);
-			}
-			if (optimaArray[v][1] == min)
-			{
-				globalMinimaArray.push(optimaArray[v]);
-				globalMinimaLocArray.push([ "(" + globalX + "," + globalY + ")" ]);
-			}
-		}
-		
-		globalMaximaData.set("width",globalMaximaArray.length);
-		globalMaximaData.set("data",globalMaximaArray);
-		
-		globalMaximaText.set("width",globalMaximaArray.length);
-		globalMaximaLocText.set("width",globalMaximaArray.length);
-		
-		
-		globalMinimaData.set("width",globalMinimaArray.length);
-		globalMinimaData.set("data",globalMinimaArray);
-		
-		globalMinimaText.set("width",globalMinimaArray.length);
-		globalMinimaLocText.set("width",globalMinimaArray.length);
-		
-	}
 	
 	var globalOptimaVisible = false;
 	
@@ -734,7 +455,7 @@
 	var gui = new dat.GUI();
 
 	gui.add( this, 'functionText' ).name('z = f(x,y) = ');
-	gui.add( this, 'displayGraphFunc' ).name("Update Graph");
+	gui.add( this, 'displayGraphFunc' ).name("Update Graph").onChange(displayGraphFollowUp);
 	
 	var optimaFolder = gui.addFolder( "Range (Domain)" );
 	
@@ -751,7 +472,7 @@
 	
 	var cpFolderGUI = gui.addFolder( "Critical Points within Range (calculate first!)" );
 	
-	cpFolderGUI.add( this, 'displayCritPointsFunc' ).name("Calculate");
+	cpFolderGUI.add( this, 'displayCritPointsFunc' ).name("Calculate").onChange(displayCritPointsFollowUp);
 	
 	cpFolderGUI.add( this, "critPointVisible" ).name("Show points").onChange(
 		function()
@@ -800,12 +521,15 @@
 	xPointGUI.onChange( displayTraceFunc );
 	var yPointGUI = traceFolderGUI.add( this, 'traceY' ).min(yMin).max(yMax).step(0.01).name('y0 = ');
 	yPointGUI.onChange( displayTraceFunc );
+	 
+  var colorGraph = true;
+  var colorGraphGUI = gui.add( this, 'colorGraph' ).name("Toggle GraphColor").onChange(toggleGraphColorFunc);
 	
 	
 	<!-- ON LOAD -->
 	// Display the default graph on load, otherwise nothing will be displayed
 	displayGraphFunc();
-	
+	displayGraphFollowUp();
 	
 
 

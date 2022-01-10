@@ -5,11 +5,13 @@
   <title>Contours-v2</title>
   
   <!-- modified from https://github.com/unconed/mathbox -->
-  <script src="js/mathbox-bundle.js"></script>
-  <script src="js/dat.gui.js"></script>
+  <script src="js/libraries/mathbox-bundle.js"></script>
+  <script src="js/libraries/dat.gui.js"></script>
   
   <!-- http://silentmatt.com/javascript-expression-evaluator/ -->
-  <script src="js/parser.js"></script>
+  <script src="js/libraries/parser.js"></script>
+  
+  <script src="js/graph.js"></script>
 
   <link rel="stylesheet" href="css/mathbox.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -121,7 +123,7 @@
 		channels: 4, // RGBA
     });
 	
-	var graphViewVisible = false;
+	var graphViewVisible = true;
 	
 	var graphViewSolid = view.surface({
 		points:graphData, 
@@ -137,74 +139,6 @@
 	
 	var zAutofit = true;
 	
-	var displayGraphFunc = function() 
-	{ 
-		var f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
-		graphData.set("expr", 
-		    function (emit, x, y, i, j, time) 
-			{ 
-			    emit( x, f(x,y), y );
-			}
-		);
-		
-		//autofit the scale of the graph so it fits to the screen nicely
-		if (zAutofit)
-		{
-			var xStep = (xMax - xMin) / 256;
-			var yStep = (yMax - yMin) / 256;
-			var zSmallest = f(xMin, yMin);
-			var zBiggest  = f(xMax, yMax);
-			
-			//for every possible x & combination, find the smallest & biggest z values
-			//infinity check is a must, otherwise when the equation results in infinity (eg divide by zero) then the graph cannot be plotted
-			//when the z value is infinite, we can assign our own value to scale the graph nicely (this is optional)
-
-			for (var x = xMin; x <= xMax; x += xStep)
-			{
-				for (var y = yMin; y <= yMax; y += yStep)
-				{
-					var z = f(x,y);
-					if (z <= zSmallest && isFinite(z) == true){
-						zSmallest = z;
-					} else if (z <= zSmallest && isFinite(z) == false){ //optional
-						zSmallest = -256; //it can be any number since it's infinite
-					}
-					
-					if (z >= zBiggest && isFinite(z) == true) {
-						zBiggest = z;
-					} else if (z >= zBiggest && isFinite(z) == false){ //optional
-						zBiggest = 256; //it can be any number since it's infinite
-					}
-				}
-			}
-			
-			// change the global zMin var value to follow the smallest possible z val and
-			// global zMax var value to follow the biggest possible z val
-			zMin = zSmallest;
-			zMax = zBiggest;
-		}
-		
-	
-		view.set("range", [[xMin, xMax], [zMin,zMax], [yMin, yMax]]); 
-		
-		//set the graph color to rainbow that dynamically changes with value
-		//use HSL so it's easier to scale (use percent) instead of RGB
-		graphColors.set("expr", 
-				function (emit, x, y, i, j, time) 
-				{ 
-					var z = f(x,y);
-					
-					var percent = (z - 1.2 * zMin) / (zMax - 1.2 * zMin);
-					var color = new THREE.Color( 0xffffff );
-					color.setHSL( 1-percent, 1, 0.5 );
-					emit( color.r, color.g, color.b, 0.4 ); //last one is the alpha (transparency) setting
-				}
-			);	
-			
-			
-		displayContourFunc();
-	}
-	
 	<!-- END OF DISPLAY GRAPH SETTING ===================================================== -->
 	
 	
@@ -212,50 +146,9 @@
 	
 	var c = 0, c2 = 5, c3 = 8; // need to auto calculate c values based on graph height (autofit)
 	
-	var displayContourFunc = function ()
-	{
-		f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
-		
-		vertexArray = [];
-		edgeArray = [];
-		
-		vertexArray = marchingSquares( xMin, xMax, yMin, yMax, f, c, 256 );
-		
-		for (var n = 0; n < vertexArray.length; n += 2)
-		{
-			edgeArray.push( vertexArray[n], vertexArray[n+1] );
-		}
-		edgeData.set( "width", edgeArray.length/2 );
-		edgeData.set( "data", edgeArray );
-		
-		
-		vertexArray2 = [];
-		edgeArray2 = [];
-		
-		vertexArray2 = marchingSquares( xMin, xMax, yMin, yMax, f, c2, 256 );
-		
-		for (var n = 0; n < vertexArray2.length; n += 2)
-		{
-			edgeArray2.push( vertexArray2[n], vertexArray2[n+1] );
-		}
-		edgeData2.set( "width", edgeArray2.length/2 );
-		edgeData2.set( "data", edgeArray2 );
-		
-		
-		vertexArray3 = [];
-		edgeArray3 = [];
-		
-		vertexArray3 = marchingSquares( xMin, xMax, yMin, yMax, f, c3, 256 );
-		
-		for (var n = 0; n < vertexArray3.length; n += 2)
-		{
-			edgeArray3.push( vertexArray3[n], vertexArray3[n+1] );
-		}
-		edgeData3.set( "width", edgeArray3.length/2 );
-		edgeData3.set( "data", edgeArray3 );
-		
-	}
+	var cxMin = xMin, cxMax = xMax, cyMin = yMin, cyMax = yMax; //x and y range for c3 (vertexarray3) so that users can see contours beyond graph limit
 	
+		
 	// discrete graph
 	var vertexArray = [];
 	var edgeArray = [];
@@ -309,70 +202,6 @@
 	
 	
 	<!-- END OF DISPLAY CONTOUR SETTING ===================================================== -->
-	
-	<!-- CONTOUR CALCULATIONS (MARCHING SQUARES) =============================================== -->
-	
-	function marchingSquares(xMin, xMax, yMin, yMax, f, c, resolution)
-	{
-		var xStep = (xMax - xMin) / resolution;
-		var yStep = (yMax - yMin) / resolution;
-		var points = [];
-		for (var x = xMin; x < xMax; x += xStep)
-		{
-			for (var y = yMin; y < yMax; y += yStep)
-			{
-				var z1 = f(x,y);				// bottom left corner
-				var z2 = f(x+xStep, y);			// bottom right corner
-				var z4 = f(x+xStep, y+yStep);	// top right corner
-				var z8 = f(x, y+yStep);			// top left corner
-				var n = 0;
-				if (z1 > c) n += 1;
-				if (z2 > c) n += 2;
-				if (z4 > c) n += 4;
-				if (z8 > c) n += 8;
-				
-				// calculate linear interpolation values along the given sides.
-				//  to simplify, could assume each is 0.5*xStep or 0.5*yStep accordingly.
-				var bottomInterp 	= (c - z1) / (z2 - z1) * xStep;
-				var topInterp 		= (c - z8) / (z4 - z8) * xStep;
-				var leftInterp 		= (c - z1) / (z8 - z1) * yStep;
-				var rightInterp 	= (c - z2) / (z4 - z2) * yStep;
-				
-				// for a visual diagram of cases: https://en.wikipedia.org/wiki/Marching_squares
-				if (n == 1 || n == 14) // lower left corner
-					points.push( [x, c, y+leftInterp], [x+bottomInterp, c, y] );
-					
-				else if (n == 2 || n == 13) // lower right corner
-					points.push( [x+bottomInterp, c, y], [x+xStep, c, y+rightInterp] );
-					
-				else if (n == 4 || n == 11) // upper right corner
-					points.push( [x+topInterp, c, y+yStep], [x+xStep, c, y+rightInterp] );
-					
-				else if (n == 8 || n == 7) // upper left corner
-					points.push( [x, c, y+leftInterp], [x+topInterp, c, y+yStep] );
-					
-				else if (n == 3 || n == 12) // horizontal
-					points.push( [x, c, y+leftInterp], [x+xStep, c, y+rightInterp] );
-					
-				else if (n == 6 || n == 9) // vertical
-					points.push( [x+bottomInterp, c, y], [x+topInterp, c, y+yStep] );
-					
-				else if (n == 5) // should do subcase // lower left & upper right
-					points.push( [x, c, y+leftInterp], [x+bottomInterp, c, y], [x+topInterp, c, y+yStep], [x+xStep, c, y+rightInterp] );
-					
-				else if (n == 10) // should do subcase // lower right & upper left
-					points.push( [x+bottomInterp, c, y], [x+xStep, c, y+rightInterp], [x, c, y+yStep/2], [x, c, y+leftInterp], [x+topInterp, c, y+yStep] );
-					
-				else if (n == 0 || n == 15) // no line segments appear in this grid square.
-					points.push();
-				
-			}
-		}
-		return points;
-	
-	}
-	
-	<!-- END OF CONTOUR CALCULATIONS (MARCHING SQUARES) =============================================== -->
 
 
 	<!-- START OF GUI SETTING ===================================================== -->
@@ -381,20 +210,17 @@
 	var gui = new dat.GUI();
 
 	gui.add( this, 'functionText' ).name('z = f(x,y) = ');
-	gui.add( this, 'displayGraphFunc' ).name("Update Graph");
-	
-
-	gui.add( this, 'c' ).name('Contour at z=c=').onFinishChange( displayContourFunc );
-	
-	gui.add( this, 'c2' ).name('Contour at z=c=').onFinishChange( displayContourFunc );
-	
-	gui.add( this, 'c3' ).name('Contour at z=c=').onFinishChange( displayContourFunc );
+	gui.add( this, 'displayGraphFunc' ).name("Update Graph").onChange(displayContourFunc);
 	
 	
 	var folder0 = gui.addFolder ('Contour with custom z value');
 	folder0.open();
-	
 
+	folder0.add( this, 'c' ).name('Contour at z=c=').onFinishChange( displayContourFunc );
+	
+	folder0.add( this, 'c2' ).name('Contour at z=c=').onFinishChange( displayContourFunc );
+	
+	folder0.add( this, 'c3' ).name('Contour at z=c=').onFinishChange( displayContourFunc );
 	
 	var graphViewVisibleGUI = gui.add( this, "graphViewVisible" ).name("View graph").onChange(
 		function()
@@ -408,7 +234,7 @@
 	<!-- ON LOAD -->
 	// Display the default graph on load, otherwise nothing will be displayed
 	displayGraphFunc();
-	
+	displayContourFunc();
 	
 </script>
 
