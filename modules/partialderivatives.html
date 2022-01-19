@@ -133,7 +133,7 @@
 	<!-- START OF DISPLAY GRAPH SETTING ==================================================== -->
 	// to display the basic graph
 	 
-	var functionText = "x^4+(2*x*y)"; // the function to parse
+	var functionText = "x^2+(2*x*y) + y^2"; // the function to parse
 	
   var zAutofit = false;
 	
@@ -254,19 +254,24 @@
 	<!-- START OF GUI SETTING ===================================================== -->
 	// to control the parameters for displaying the graph
 	
+  var changeGraph = function(){
+      displayGraphFunc();
+      displayDerivativesFunc();
+    }
+  
 	var gui = new dat.GUI();
 	
-	gui.add( this, 'functionText' ).name('z = f(x,y) = ');
-	gui.add( this, 'displayGraphFunc' ).name("Update Graph").onChange(displayDerivativesFunc);
+	gui.add( this, 'functionText' ).name('z = f(x,y) = ').onFinishChange(changeGraph);
+	//gui.add( this, 'displayGraphFunc' ).name("Update Graph").onChange(displayDerivativesFunc);
 	
 	var setDisplayFolder = gui.addFolder('Display setting');
 	
-	setDisplayFolder.add( this, 'xMin' ).name("xMin");
-	setDisplayFolder.add( this, 'xMax' ).name("xMax");
-	setDisplayFolder.add( this, 'yMin' ).name("yMin");
-	setDisplayFolder.add( this, 'yMax' ).name("yMax");
-	setDisplayFolder.add( this, 'zMin' ).name("zMin");
-	setDisplayFolder.add( this, 'zMax' ).name("zMax");
+	setDisplayFolder.add( this, 'xMin' ).name("xMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'xMax' ).name("xMax").onChange(changeGraph);
+	setDisplayFolder.add( this, 'yMin' ).name("yMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'yMax' ).name("yMax").onChange(changeGraph);
+	setDisplayFolder.add( this, 'zMin' ).name("zMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'zMax' ).name("zMax").onChange(changeGraph);
 	
 
 	gui.add( this, "yPlaneVisible" ).name("Show z = f(x0,y)").onChange( 
@@ -276,7 +281,7 @@
 			yCurveView.set("visible", yPlaneVisible);
 		}
 	 );
-	gui.add( this, "yDerivVisible" ).name("Show Fy(x0,y)").onChange( 
+	gui.add( this, "yDerivVisible" ).name("Show fy(x0,y0)").onChange( 
 		function()
 		{
 			yDerivView.set("visible", yDerivVisible);
@@ -291,7 +296,7 @@
 			xCurveView.set("visible", xPlaneVisible);
 		}
 	 );
-	gui.add( this, "xDerivVisible" ).name("Show Fx(x,y0)").onChange( 
+	gui.add( this, "xDerivVisible" ).name("Show fx(x0,y0)").onChange( 
 		function()
 		{
 			xDerivView.set("visible", xDerivVisible);

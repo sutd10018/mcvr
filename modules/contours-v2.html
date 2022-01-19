@@ -123,7 +123,7 @@
 		channels: 4, // RGBA
     });
 	
-	var graphViewVisible = true;
+	var graphViewVisible = false;
 	
 	var graphViewSolid = view.surface({
 		points:graphData, 
@@ -137,30 +137,39 @@
 	 
 	var functionText = "9-(((x^2)/4)+y^2)";// the function to parse
 	
-	var zAutofit = true;
+	var zAutofit = false;
 	
 	<!-- END OF DISPLAY GRAPH SETTING ===================================================== -->
 	
 	
 	<!-- START OF DISPLAY CONTOUR SETTING ===================================================== -->
 	
-	var c = 0, c2 = 5, c3 = 8; // need to auto calculate c values based on graph height (autofit)
+  var cArray = new Array();
+  //cArray.push(1);
+  //cArray.push(5);
+  //cArray.push(8);
+  
+	//var c = 0, c2 = 5, c3 = 8; // need to auto calculate c values based on graph height (autofit)
 	
 	var cxMin = xMin, cxMax = xMax, cyMin = yMin, cyMax = yMax; //x and y range for c3 (vertexarray3) so that users can see contours beyond graph limit
 	
 		
 	// discrete graph
-	var vertexArray = [];
+	/*var vertexArray = [];
 	var edgeArray = [];
 	
 	var vertexArray2 = [];
 	var edgeArray2 = [];
 	
 	var vertexArray3 = [];
-	var edgeArray3 = [];
+	var edgeArray3 = [];*/
+  var vertexArray = new Array();
+  //vertexArray.push([]);vertexArray.push([]);vertexArray.push([]);
+  var edgeArray = new Array();
+  //edgeArray.push([]);edgeArray.push([]);edgeArray.push([]);
 	
 	// draw the links
-    var edgeData = view.array({
+    /*var edgeData = view.array({
 		width: edgeArray.length/2,
 		items: 2,    // two vertices per segment...
 		channels: 3, // graphed in 3D
@@ -181,11 +190,30 @@
 		items: 2,    // two vertices per segment...
 		channels: 3, // graphed in 3D
 		data: edgeArray3,
-    });
+    });*/
+  var edgeData = new Array();
+  /*edgeData.push(view.array({
+		width: edgeArray[0].length/2,
+		items: 2,    // two vertices per segment...
+		channels: 3, // graphed in 3D
+		data: edgeArray,
+    }))
+  edgeData.push(view.array({
+		width: edgeArray[1].length/2,
+		items: 2,    // two vertices per segment...
+		channels: 3, // graphed in 3D
+		data: edgeArray,
+    }))
+  edgeData.push(view.array({
+		width: edgeArray[2].length/2,
+		items: 2,    // two vertices per segment...
+		channels: 3, // graphed in 3D
+		data: edgeArray,
+    }))*/
 	
 	var contourLineVisible = true;
 	
-	var edgeView = view.vector({
+	/*var edgeView = view.vector({
 		points: edgeData, 
 		color:"cyan", width:8, start:false, visible:contourLineVisible
 	});
@@ -198,29 +226,99 @@
 	var edgeView3 = view.vector({
 		points: edgeData3, 
 		color:"cyan", width:10, start:false, visible:contourLineVisible
-	});
+	});*/
+  var edgeView = new Array();
+  /*edgeView.push(view.vector({
+		points: edgeData[0], 
+		color:"cyan", width:10, start:false, visible:contourLineVisible
+	}))
+  edgeView.push(view.vector({
+		points: edgeData[1], 
+		color:"cyan", width:10, start:false, visible:contourLineVisible
+	}))
+  edgeView.push(view.vector({
+		points: edgeData[2], 
+		color:"cyan", width:10, start:false, visible:contourLineVisible
+	}))*/
 	
+  var AddContour = function(n)
+  {
+    cArray.push(n);
+    
+    vertexArray.push([]);
+    edgeArray.push([]);
+    
+    edgeData.push(view.array({
+    width: edgeArray[edgeArray.length-1].length/2,
+    items: 2,    // two vertices per segment...
+    channels: 3, // graphed in 3D
+    data: edgeArray[edgeArray.length-1],
+    }))
+    
+    edgeView.push(view.vector({
+    points: edgeData[edgeData.length-1], 
+    color:"cyan", width:10, start:false, visible:contourLineVisible
+    }))
+  }
+    
+  var DeleteContour = function()
+  {
+    cArray = cArray.slice(0, cArray.length-1);
+    vertexArray = vertexArray.slice(0, vertexArray.length-1);
+    edgeArray = edgeArray.slice(0, edgeArray.length-1);
+    edgeData = edgeData.slice(0, edgeData.length-1);
+    
+    edgeView[edgeView.length-1].set("visible", false);
+    edgeView = edgeView.slice(0, edgeView.length-1);
+  }
+    
 	
 	<!-- END OF DISPLAY CONTOUR SETTING ===================================================== -->
 
 
 	<!-- START OF GUI SETTING ===================================================== -->
 	// to control the parameters for displaying the graph
+  
+  var changeGraph = function()
+    {
+      displayGraphFunc();
+      displayContourFuncArray();
+    }
 
 	var gui = new dat.GUI();
 
-	gui.add( this, 'functionText' ).name('z = f(x,y) = ');
-	gui.add( this, 'displayGraphFunc' ).name("Update Graph").onChange(displayContourFunc);
+	gui.add( this, 'functionText' ).name('z = f(x,y) = ').onFinishChange(changeGraph);
+	//gui.add( this, 'displayGraphFunc' ).name("Update Graph").onChange(displayContourFuncArray);
 	
+  var setDisplayFolder = gui.addFolder('Display setting');
+	
+	setDisplayFolder.add( this, 'xMin' ).name("xMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'xMax' ).name("xMax").onChange(changeGraph);
+	setDisplayFolder.add( this, 'yMin' ).name("yMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'yMax' ).name("yMax").onChange(changeGraph);
+	setDisplayFolder.add( this, 'zMin' ).name("zMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'zMax' ).name("zMax").onChange(changeGraph);
 	
 	var folder0 = gui.addFolder ('Contour with custom z value');
 	folder0.open();
+  
+  var contourC = 0;
+  
+  var displayNewContour = function()
+    {
+      AddContour(contourC);
+      displayContourFuncArray();
+    }
+  folder0.add( this, 'contourC' ).name('Contour at z=c=');
+  
+  folder0.add( this, 'displayNewContour' ).name("Add Contour");
+  folder0.add( this, 'DeleteContour' ).name("Delete Contour").onChange(displayContourFuncArray);
 
-	folder0.add( this, 'c' ).name('Contour at z=c=').onFinishChange( displayContourFunc );
+	/*folder0.add( this, 'c' ).name('Contour at z=c=').onFinishChange( displayContourFuncArray );
 	
-	folder0.add( this, 'c2' ).name('Contour at z=c=').onFinishChange( displayContourFunc );
+	folder0.add( this, 'c2' ).name('Contour at z=c=').onFinishChange( displayContourFuncArray );
 	
-	folder0.add( this, 'c3' ).name('Contour at z=c=').onFinishChange( displayContourFunc );
+	folder0.add( this, 'c3' ).name('Contour at z=c=').onFinishChange( displayContourFuncArray );*/
 	
 	var graphViewVisibleGUI = gui.add( this, "graphViewVisible" ).name("View graph").onChange(
 		function()
@@ -234,7 +332,7 @@
 	<!-- ON LOAD -->
 	// Display the default graph on load, otherwise nothing will be displayed
 	displayGraphFunc();
-	displayContourFunc();
+	displayContourFuncArray();
 	
 </script>
 

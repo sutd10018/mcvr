@@ -185,7 +185,7 @@
 		color: "fuchsia", width: 8, start: true, visible:dxDerivVisible, zIndex: 1
 	});
 	
-	var dxDerivText = view.text( {width:1, data:["dz/dx"], font: "Helvetica", style: "normal"} );
+	var dxDerivText = view.text( {width:1, data:["(δz/δx) • dx"], font: "Helvetica", style: "normal"} );
 	var dxDerivTextView = view.label( {text: dxDerivText, points: dxDerivData,
       size: 12, color: "fuchsia", outline: 0, offset: [30,20], zIndex: 1, visible: dxDerivVisible} );
 	  
@@ -196,7 +196,7 @@
 		color: "chartreuse", width: 8, start: true, visible:dyDerivVisible, zIndex: 1
 	});
 	
-	var dyDerivText = view.text( {width:1, data:["dz/dy"], font: "Helvetica", style: "normal"} );
+	var dyDerivText = view.text( {width:1, data:["(δz/δy) • dy"], font: "Helvetica", style: "normal"} );
 	var dyDerivTextView = view.label( {text: dyDerivText, points: dyDerivData,
       size: 12, color: "chartreuse", outline: 0, offset: [30,20], zIndex: 1, visible: dyDerivVisible} );
 	
@@ -239,20 +239,26 @@
 	<!-- START OF GUI SETTING ===================================================== -->
 	// to control the parameters for displaying the graph
 	
+  var changeGraph = function()
+    {
+      displayGraphFunc();
+      displayTangentsFunc();
+    }
+  
 	var gui = new dat.GUI();
 	
-	gui.add( this, 'functionText' ).name('z = f(x,y) = ');
+	gui.add( this, 'functionText' ).name('z = f(x,y) = ').onFinishChange(changeGraph);
 	
 	gui.add( this, 'displayGraphFunc' ).name("Update Graph").onChange(displayTangentsFunc);
 	
   var setDisplayFolder = gui.addFolder('Display setting');
 	
-	setDisplayFolder.add( this, 'xMin' ).name("xMin");
-	setDisplayFolder.add( this, 'xMax' ).name("xMax");
-	setDisplayFolder.add( this, 'yMin' ).name("yMin");
-	setDisplayFolder.add( this, 'yMax' ).name("yMax");
-	setDisplayFolder.add( this, 'zMin' ).name("zMin");
-	setDisplayFolder.add( this, 'zMax' ).name("zMax");
+	setDisplayFolder.add( this, 'xMin' ).name("xMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'xMax' ).name("xMax").onChange(changeGraph);
+	setDisplayFolder.add( this, 'yMin' ).name("yMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'yMax' ).name("yMax").onChange(changeGraph);
+	setDisplayFolder.add( this, 'zMin' ).name("zMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'zMax' ).name("zMax").onChange(changeGraph);
   
 	gui.add( this, 'xtFunctionText' ).name('x(t) = ');
 	gui.add( this, 'ytFunctionText' ).name('y(t) = ');
@@ -261,7 +267,7 @@
 	//need to set min and max values to follow the boundaries of graph
 	gui.add( this, "t" ).min(-2).max(2).step(0.01).name('t0 = ').onChange( displayTangentsFunc );
 
-	gui.add( this, "dxDerivVisible" ).name("dz/dx").onChange( 
+	gui.add( this, "dxDerivVisible" ).name("(δz/δx) • dx").onChange( 
 		function()
 		{
 			dxDerivView.set("visible", dxDerivVisible);
@@ -269,7 +275,7 @@
 		}
 	 );
 	 
-	gui.add( this, "dyDerivVisible" ).name("dz/dy").onChange( 
+	gui.add( this, "dyDerivVisible" ).name("(δz/δy) • dy").onChange( 
 		function()
 		{
 			dyDerivView.set("visible", dyDerivVisible);
