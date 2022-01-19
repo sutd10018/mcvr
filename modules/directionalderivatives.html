@@ -134,9 +134,9 @@
 	<!-- START OF DISPLAY GRAPH SETTING ==================================================== -->
 	// to display the basic graph
 	 
-	var functionText = "x^2-y^2"; // the function to parse
+	var functionText = "-x^2-y^2"; // the function to parse
 	
-	var zAutofit = true;
+	var zAutofit = false;
 	
 	<!-- END OF DISPLAY GRAPH SETTING ===================================================== -->
    
@@ -159,7 +159,9 @@
 	var pointVisible = true;
 	var tracePointView = view.point( {size: 30, color: "white", points:tracePointData, visible: pointVisible} );
 	
-	
+	var traceText = view.text( {width:1, data:["(0)"], font: "Helvetica", style: "normal"} );
+	var traceTextView = view.label( {text: traceText, points: tracePointData,
+      size: 14, color: "orange", outline: 0, offset: [0,-40], zIndex: 3, visible: pointVisible} );
 	
 	// create data and view for partial derivatives in x and y
 	
@@ -245,19 +247,25 @@
 	<!-- START OF GUI SETTING ===================================================== -->
 	// to control the parameters for displaying the graph
 	
+  var changeGraph = function()
+    {
+      displayGraphFunc();
+      displayDirDerivativesFunc();
+    }
+  
 	var gui = new dat.GUI();
 	
-	gui.add( this, 'functionText' ).name('z = f(x,y) = ');
-	gui.add( this, 'displayGraphFunc' ).name("Update Graph").onChange(displayDirDerivativesFunc);
+	gui.add( this, 'functionText' ).name('z = f(x,y) = ').onFinishChange(changeGraph);
+	//gui.add( this, 'displayGraphFunc' ).name("Update Graph").onChange(displayDirDerivativesFunc);
 	
 	var setDisplayFolder = gui.addFolder('Display setting');
 	
-	setDisplayFolder.add( this, 'xMin' ).name("xMin");
-	setDisplayFolder.add( this, 'xMax' ).name("xMax");
-	setDisplayFolder.add( this, 'yMin' ).name("yMin");
-	setDisplayFolder.add( this, 'yMax' ).name("yMax");
-	setDisplayFolder.add( this, 'zMin' ).name("zMin");
-	setDisplayFolder.add( this, 'zMax' ).name("zMax");
+	setDisplayFolder.add( this, 'xMin' ).step(0.01).name("xMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'xMax' ).step(0.01).name("xMax").onChange(changeGraph);
+	setDisplayFolder.add( this, 'yMin' ).step(0.01).name("yMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'yMax' ).step(0.01).name("yMax").onChange(changeGraph);
+	setDisplayFolder.add( this, 'zMin' ).step(0.01).name("zMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'zMax' ).step(0.01).name("zMax").onChange(changeGraph);
 	
 	gui.add( this, "pointVisible" ).name("Show Point(x0,y0)").onChange(
 		function()
@@ -271,7 +279,7 @@
 	yPointGUI.onChange( displayDirDerivativesFunc );
 
 
-	gui.add( this, "dxVisible" ).name("x dir-derivative").onChange( 
+	gui.add( this, "dxVisible" ).name("δx").onChange( 
 		function()
 		{
 			dxView.set("visible", dxVisible);
@@ -279,7 +287,7 @@
 		}
 	 );
 	 
-	gui.add( this, "dyVisible" ).name("y dir-derivative").onChange( 
+	gui.add( this, "dyVisible" ).name("δy").onChange( 
 		function()
 		{
 			dyView.set("visible", dyVisible);
@@ -300,7 +308,7 @@
 	
 	var dirVectorFolder = gui.addFolder('Show Vector Directions');
 	
-	dirVectorFolder.add( this, "dirVectorVisible" ).name("Show unit vector").onChange( 
+	dirVectorFolder.add( this, "dirVectorVisible" ).name("Vector u(u1, u2)").onChange( 
 		function()
 		{
 			dirVectorView.set("visible", dirVectorVisible);
@@ -322,9 +330,30 @@
 	
 	dirVectorFolder.add( this, "vectorGuide" ).name("Vector input guide");
 	
-	var vectorUGUI = dirVectorFolder.add( this, 'vectorU' ).min(xMin).max(xMax).step(1).name('vector a = ');
+	var vectorUGUI = dirVectorFolder.add( this, 'vectorU' ).min(-1).max(1).step(0.01).name('u1 = ');
 	vectorUGUI.onChange( displayDirDerivativesFunc );
-	var vectorVGUI = dirVectorFolder.add( this, 'vectorV' ).min(yMin).max(yMax).step(1).name('vector b = ');
+	var vectorVGUI = dirVectorFolder.add( this, 'vectorV' ).min(-1).max(1).step(0.01).name('u2 = ');
+	vectorVGUI.onChange( displayDirDerivativesFunc );
+  
+  var stepSize = 0.1;
+  var stepForward = function()
+  {
+    xPoint += (stepSize * vectorU);
+    yPoint += (stepSize * vectorV);
+    displayDirDerivativesFunc();
+  }
+  var stepBackward = function()
+  {
+    xPoint -= (stepSize * vectorU);
+    yPoint -= (stepSize * vectorV);
+    displayDirDerivativesFunc();
+  }
+  
+  var StepFolder = gui.addFolder("Step");
+  StepFolder.add( this, 'stepSize' ).name("Step Size");
+  StepFolder.add( this, 'stepForward').name("Step Forward");
+  StepFolder.add( this, 'stepBackward').name("Step Backward");
+  
 	vectorVGUI.onChange( displayDirDerivativesFunc );
 	
   var colorGraph = true;

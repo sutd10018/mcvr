@@ -89,10 +89,10 @@ var displayGraphFunc = function()
           //hide emissions approaching infinity
           var alpha = 0.8;
           
-          if(percent > 1.5 || percent < -0.5)
+          /*if(percent > 1.5 || percent < -0.5)
           {
             alpha = 0;
-          }
+          }*/
           
 					emit( color.r, color.g, color.b, alpha ); //last one is the alpha (transparency) setting
           //emit( 0.5, 0.8, percent, 0.4 );
@@ -200,10 +200,10 @@ var toggleGraphColorFunc = function()
           //hide emissions approaching infinity
           var alpha = 0.4;
           
-          if(percent > 1.5 || percent < -0.5)
+          /*if(percent > 1.5 || percent < -0.5)
           {
             alpha = 0;
-          }
+          }*/
           
 					emit( color.r, color.g, color.b, alpha ); //last one is the alpha (transparency) setting
 				}
@@ -221,10 +221,10 @@ var toggleGraphColorFunc = function()
           //hide emissions approaching infinity
           var alpha = 0.8;
           
-          if(percent > 1.5 || percent < -0.5)
+          /*if(percent > 1.5 || percent < -0.5)
           {
             alpha = 0;
-          }
+          }*/
           
 					emit( percent*0.6, percent, percent, alpha );
 				}
@@ -304,7 +304,7 @@ var displayDerivativesFunc = function ()
 		
 		zPoint = f(xPoint, yPoint);
 		tracePointData.set("data", [ [xPoint, zPoint, yPoint] ] );
-		
+    
 		// calculate partial derivatives
 		
 		// valid for all vectors
@@ -363,6 +363,10 @@ var displayDerivativesFunc = function ()
 		gradientData.set( "data", [gradientVectorHead, vectorTail] );
 		gradientData2.set( "data", [gradientVectorHead2, vectorTail] );
 		
+    var dzDisp = Math.round(dz * 100) / 100;
+    
+    traceText.set("data", ["(" + dzDisp + ")"]);
+		
 	}
 	
  /**
@@ -410,6 +414,30 @@ var displayDerivativesFunc = function ()
 		edgeData3.set( "width", edgeArray3.length/2 );
 		edgeData3.set( "data", edgeArray3 );
 		
+	}
+  
+  /**
+  * updates the graph's contours at specified points
+  */
+  var displayContourFuncArray = function ()
+	{
+		f = Parser.parse( functionText ).toJSFunction( ['x','y'] );
+		
+    for(var i = 0; i < cArray.length; i++)
+    {
+      vertexArray[i] = [];
+      edgeArray[i] = [];
+      
+      vertexArray[i] = marchingSquares( xMin, xMax, yMin, yMax, f, cArray[i], 256 );
+      
+      for (var n = 0; n < vertexArray[i].length; n += 2)
+      {
+        edgeArray[i].push( vertexArray[i][n], vertexArray[i][n+1] );
+      }
+      
+      edgeData[i].set( "width", edgeArray[i].length/2 );
+      edgeData[i].set( "data", edgeArray[i] );
+    }
 	}
   
 	//<!-- CONTOUR CALCULATIONS (MARCHING SQUARES) =============================================== -->

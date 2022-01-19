@@ -132,7 +132,7 @@
 	 
 	var functionText = "x^2+x*y"; // the function to parse
 	
-	var zAutofit = true; 
+	var zAutofit = false; 
 	
 	var critPointsArray = [];
   
@@ -451,12 +451,26 @@
    
 	<!-- START OF GUI SETTING ===================================================== -->
 	// to control the parameters for displaying the graph
-
+  var changeGraph = function()
+    {
+      displayGraphFunc();
+      displayGraphFollowUp();
+    }
+  
 	var gui = new dat.GUI();
 
-	gui.add( this, 'functionText' ).name('z = f(x,y) = ');
-	gui.add( this, 'displayGraphFunc' ).name("Update Graph").onChange(displayGraphFollowUp);
+	gui.add( this, 'functionText' ).name('z = f(x,y) = ').onFinishChange(changeGraph);
+	//gui.add( this, 'displayGraphFunc' ).name("Update Graph").onChange(displayGraphFollowUp);
 	
+  var setDisplayFolder = gui.addFolder('Display setting');
+	
+	setDisplayFolder.add( this, 'xMin' ).name("xMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'xMax' ).name("xMax").onChange(changeGraph);
+	setDisplayFolder.add( this, 'yMin' ).name("yMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'yMax' ).name("yMax").onChange(changeGraph);
+	setDisplayFolder.add( this, 'zMin' ).name("zMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'zMax' ).name("zMax").onChange(changeGraph);
+  
 	var optimaFolder = gui.addFolder( "Range (Domain)" );
 	
 	var xRangeFolder = optimaFolder.addFolder( "xMin <= R <= xMax" );
@@ -508,9 +522,9 @@
 		}
 	);
 	
-	var traceFolderGUI = gui.addFolder( "Trace (x0,y0) point on graph");
+	var traceFolderGUI = gui.addFolder( "(x0,y0) point on graph");
 	
-	traceFolderGUI.add( this, "traceVisible" ).name("Trace(x0,y0)").onChange(
+	traceFolderGUI.add( this, "traceVisible" ).name("(x0,y0)").onChange(
 		function()
 		{
 			tracePointView.set("visible", traceVisible);

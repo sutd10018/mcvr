@@ -136,7 +136,7 @@
 	var functionText = "sqrt(x^2+y^2)";// the function to parse
 	
 	// if autofit is true, the displaygraph func will also include calculations of display range in z-axis
-	var zAutofit = true;
+	var zAutofit = false;
 	
 	<!-- END OF DISPLAY GRAPH SETTING ===================================================== -->
 	
@@ -243,11 +243,26 @@
 	<!-- START OF GUI SETTING ===================================================== -->
 	// to control the parameters for displaying the graph
 
+  var changeGraph = function()
+    {
+      displayGraphFunc();
+      displayContourFunc();
+    }
+    
 	var gui = new dat.GUI();
 
-	gui.add( this, 'functionText' ).name('z = f(x,y) = ');
-	gui.add( this, 'displayGraphFunc' ).name("Update Graph").onChange(displayContourFunc);
+	gui.add( this, 'functionText' ).name('z = f(x,y) = ').onFinishChange(changeGraph);
+	//gui.add( this, 'displayGraphFunc' ).name("Update Graph").onChange(displayContourFunc);
 	
+  var setDisplayFolder = gui.addFolder('Display setting');
+	
+	setDisplayFolder.add( this, 'xMin' ).name("xMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'xMax' ).name("xMax").onChange(changeGraph);
+	setDisplayFolder.add( this, 'yMin' ).name("yMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'yMax' ).name("yMax").onChange(changeGraph);
+	setDisplayFolder.add( this, 'zMin' ).name("zMin").onChange(changeGraph);
+	setDisplayFolder.add( this, 'zMax' ).name("zMax").onChange(changeGraph);
+  
 	gui.add( this, "contourLineVisible" ).name("Contour at z="+c).onChange(
 		function()
 		{
