@@ -703,11 +703,11 @@ var displayDerivativesFunc = function ()
 	var OptimaCalcFunc = function(xMin, xMax, yMin, yMax, f)
 	{
 		var points = [];
-		var step = 1;
+		//var step = 0.01;
 	
-		for (var x=xMin; x <= xMax; x += step)
+		for (var x=xMin; x <= xMax; x += optimaStep)
 		{
-			for (var y=yMin; y <= yMax; y += step)
+			for (var y=yMin; y <= yMax; y += optimaStep)
 			{
 				var z = f(x,y);
 				points.push([x,z,y]);
@@ -721,16 +721,28 @@ var displayDerivativesFunc = function ()
 	{
 		
 		//we run through the z values in optimaArray first
-		var zPointsArray = [];
+		/*var zPointsArray = [];
 		for (var u = 0; u < optimaArray.length; u++) 
 		{
 			zPointsArray.push(optimaArray[u][1]);
-		}
+		}*/
 		
 		//then we find what is the biggest Z value and the smallest Z value
-		var max = Math.max(...zPointsArray);
-		var min = Math.min(...zPointsArray);
+		var max = optimaArray[0][1];// = Math.max(...zPointsArray);
+		var min = optimaArray[0][1];// = Math.min(...zPointsArray);
 			
+    for (var u = 1; u < optimaArray.length; u++)
+    {
+      if(optimaArray[u][1] > max)
+      {
+        max = optimaArray[u][1];
+      }
+      if(optimaArray[u][1] < min)
+      {
+        min = optimaArray[u][1];
+      }
+    }
+      
 		for (var v = 0; v < optimaArray.length; v++) 
 		{	
 			var globalX = Math.round(optimaArray[v][0] * 100) / 100;

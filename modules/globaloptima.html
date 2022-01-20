@@ -49,7 +49,7 @@
 	
     // set the boundaries/scale of the graph display
 	// zMin & zMax values are just placeholder, they would be replaced in later function if autofit is true
-	var	xMin = -5, xMax = 5, yMin = -5,	yMax = 5, zMin = -10, zMax = 10;
+	var	xMin = -10, xMax = 10, yMin = -10,	yMax = 10, zMin = -10, zMax = 10;
 	
 	// set the display view with mathbox
 	// note that by default, mathbox y & z axis references are switched,
@@ -135,6 +135,8 @@
 	var zAutofit = false; 
 	
 	var critPointsArray = [];
+  
+  var optimaStep = 0.01;
   
   var displayGraphFollowUp = function(){
     
@@ -487,6 +489,7 @@
 	var cpFolderGUI = gui.addFolder( "Critical Points within Range (calculate first!)" );
 	
 	cpFolderGUI.add( this, 'displayCritPointsFunc' ).name("Calculate").onChange(displayCritPointsFollowUp);
+  cpFolderGUI.add( this, 'optimaStep' ).name("Calc Step Size")
 	
 	cpFolderGUI.add( this, "critPointVisible" ).name("Show points").onChange(
 		function()
