@@ -134,7 +134,7 @@
 	<!-- START OF DISPLAY GRAPH SETTING ==================================================== -->
 	// to display the basic graph
 	 
-	var functionText = "-x^2-y^2"; // the function to parse
+	var functionText = "1-x^2-y^2"; // the function to parse
 	
 	var zAutofit = false;
 	
@@ -279,7 +279,7 @@
 	yPointGUI.onChange( displayDirDerivativesFunc );
 
 
-	gui.add( this, "dxVisible" ).name("δx").onChange( 
+	gui.add( this, "dxVisible" ).name("v1").onChange( 
 		function()
 		{
 			dxView.set("visible", dxVisible);
@@ -287,7 +287,7 @@
 		}
 	 );
 	 
-	gui.add( this, "dyVisible" ).name("δy").onChange( 
+	gui.add( this, "dyVisible" ).name("v2").onChange( 
 		function()
 		{
 			dyView.set("visible", dyVisible);
