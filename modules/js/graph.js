@@ -262,6 +262,14 @@ var displayDerivativesFunc = function ()
 			}
 		);
 		
+    // calculate tangent plane function
+		tangentPlaneData.set("expr", 
+		    function (emit, x, y, i, j, t) 
+			{ 
+				var z = dz_dx*(x - xPoint) + dz_dy*(y - yPoint) + zPoint;
+			    emit( x, z, y );
+			}
+		);
 		
 		// calculate partial derivatives
 		

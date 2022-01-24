@@ -185,7 +185,7 @@
 		color: "fuchsia", width: 8, start: true, visible:dxDerivVisible, zIndex: 1
 	});
 	
-	var dxDerivText = view.text( {width:1, data:["(δz/δx) • dx"], font: "Helvetica", style: "normal"} );
+	var dxDerivText = view.text( {width:1, data:["(δf/δx) • dx"], font: "Helvetica", style: "normal"} );
 	var dxDerivTextView = view.label( {text: dxDerivText, points: dxDerivData,
       size: 12, color: "fuchsia", outline: 0, offset: [30,20], zIndex: 1, visible: dxDerivVisible} );
 	  
@@ -196,7 +196,7 @@
 		color: "chartreuse", width: 8, start: true, visible:dyDerivVisible, zIndex: 1
 	});
 	
-	var dyDerivText = view.text( {width:1, data:["(δz/δy) • dy"], font: "Helvetica", style: "normal"} );
+	var dyDerivText = view.text( {width:1, data:["(δf/δy) • dy"], font: "Helvetica", style: "normal"} );
 	var dyDerivTextView = view.label( {text: dyDerivText, points: dyDerivData,
       size: 12, color: "chartreuse", outline: 0, offset: [30,20], zIndex: 1, visible: dyDerivVisible} );
 	
@@ -228,7 +228,7 @@
 		points: dfVectorData,
 		color: "orange", width: 8, start: true, visible:dfVectorVisible, zIndex: 1
 	});
-	var dfDerivText = view.text( {width:1, data:["dz/dt"], font: "Helvetica", style: "normal"} );
+	var dfDerivText = view.text( {width:1, data:["df/dt"], font: "Helvetica", style: "normal"} );
 	var dfDerivTextView = view.label( {text: dfDerivText, points: dfVectorData,
       size: 12, color: "orange", outline: 0, offset: [30,20], zIndex: 1, visible: dfVectorVisible} );
 	
@@ -267,7 +267,7 @@
 	//need to set min and max values to follow the boundaries of graph
 	gui.add( this, "t" ).min(-2).max(2).step(0.01).name('t0 = ').onChange( displayTangentsFunc );
 
-	gui.add( this, "dxDerivVisible" ).name("(δz/δx) • dx").onChange( 
+	gui.add( this, "dxDerivVisible" ).name("(δf/δx) • dx").onChange( 
 		function()
 		{
 			dxDerivView.set("visible", dxDerivVisible);
@@ -275,7 +275,7 @@
 		}
 	 );
 	 
-	gui.add( this, "dyDerivVisible" ).name("(δz/δy) • dy").onChange( 
+	gui.add( this, "dyDerivVisible" ).name("(δf/δy) • dy").onChange( 
 		function()
 		{
 			dyDerivView.set("visible", dyDerivVisible);
@@ -293,7 +293,7 @@
 	 );	
 	
 
-	var dfVectorGUI = gui.add( this, "dfVectorVisible" ).name("dz/dt").onChange( 
+	var dfVectorGUI = gui.add( this, "dfVectorVisible" ).name("df/dt").onChange( 
 		function()
 		{
 			dfVectorView.set("visible", dfVectorVisible);
