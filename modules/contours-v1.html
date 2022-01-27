@@ -40,7 +40,7 @@
 	var mathbox = mathBox({ element: element,
       plugins: ['VR', 'ui', 'controls'],
       controls: {
-        klass: THREE.VRControls
+        klass: THREE.OrbitControls
       },
     });
     if (mathbox.fallback) throw "WebGL not supported"
