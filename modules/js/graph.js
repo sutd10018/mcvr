@@ -175,7 +175,25 @@ var displayTangentsFunc = function ()
   var dfVectorHead = [xPoint + scale, zPoint + scale * df, yPoint + scale];
   dfVectorData.set( "data", [dfVectorHead, vectorTail] );
   
-  
+  //t curve
+  var pointArray = [];
+  pointArray = tCurveFunc(-10, 10, f, xtFunc, ytFunc, 0.01);
+  tCurveData.set( "width", pointArray.length );
+	tCurveData.set( "data", pointArray );
+}
+
+/**
+ * calculate every z point with regards to t
+ */
+function tCurveFunc(tMin, tMax, f, xtFunc, ytFunc, stepSize)
+{
+  var points = [];
+  //move tVar within boundaries
+  for(var i = tMin; i < tMax; i += stepSize)
+  {
+    points.push([xtFunc(i), f(xtFunc(i),ytFunc(i)), ytFunc(i)]);
+  }
+  return points;
 }
 
 /**

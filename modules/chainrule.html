@@ -126,6 +126,22 @@
 		points:graphData, 
 		color:"#FFFFFF", shaded:false, fill:true, lineX:false, lineY:false, colors:graphColors, visible:true, width:0
 	});
+  
+  // draw curves on surface, in a plane parallel to axis, through trace point
+  var tCurveVisible = true;
+  var tCurveArray = [];
+  
+	var tCurveData = view.array({
+		width: tCurveArray.length,
+		items: 1,    // two vertices per segment...
+		channels: 3, // graphed in 3D
+		data: tCurveArray,
+    });
+	
+	var tCurveView = view.line({
+		points: tCurveData, 
+		color:"darkred", width:10, start:true, visible:tCurveVisible
+	});
 	
 	<!-- END OF SCENE SETUP ============================================================= -->
 	
@@ -226,7 +242,7 @@
 	var dfVectorVisible = false;
 	var dfVectorView = view.vector({
 		points: dfVectorData,
-		color: "orange", width: 8, start: true, visible:dfVectorVisible, zIndex: 1
+		color: "orange", width: 10, visible:dfVectorVisible, zIndex: 1
 	});
 	var dfDerivText = view.text( {width:1, data:["df/dt"], font: "Helvetica", style: "normal"} );
 	var dfDerivTextView = view.label( {text: dfDerivText, points: dfVectorData,
@@ -249,7 +265,7 @@
 	
 	gui.add( this, 'functionText' ).name('z = f(x,y) = ').onFinishChange(changeGraph);
 	
-	gui.add( this, 'displayGraphFunc' ).name("Update Graph").onChange(displayTangentsFunc);
+	//gui.add( this, 'displayGraphFunc' ).name("Update Graph").onChange(displayTangentsFunc);
 	
   var setDisplayFolder = gui.addFolder('Display setting');
 	
@@ -260,12 +276,13 @@
 	setDisplayFolder.add( this, 'zMin' ).name("zMin").onChange(changeGraph);
 	setDisplayFolder.add( this, 'zMax' ).name("zMax").onChange(changeGraph);
   
-	gui.add( this, 'xtFunctionText' ).name('x(t) = ');
-	gui.add( this, 'ytFunctionText' ).name('y(t) = ');
-	gui.add( this, 'displayTangentsFunc' ).name("Update x(t),y(t)");
+	gui.add( this, 'xtFunctionText' ).name('x(t) = ').onFinishChange(displayTangentsFunc);
+	gui.add( this, 'ytFunctionText' ).name('y(t) = ').onFinishChange(displayTangentsFunc);
+	//gui.add( this, 'displayTangentsFunc' ).name("Update x(t),y(t)");
 	
 	//need to set min and max values to follow the boundaries of graph
-	gui.add( this, "t" ).min(-2).max(2).step(0.01).name('t0 = ').onChange( displayTangentsFunc );
+	gui.add( this, "t" ).min(-5).max(5).step(0.01).name('t0 = ').onChange( displayTangentsFunc );
+  gui.add( this, "tCurveVisible" ).name("view t line").onChange( function(){tCurveView.set("visible",tCurveVisible);} );
 
 	gui.add( this, "dxDerivVisible" ).name("(δf/δx) • dx").onChange( 
 		function()
