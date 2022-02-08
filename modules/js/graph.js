@@ -378,7 +378,7 @@ var displayDerivativesFunc = function ()
 		var unitVecU = vectorU / magnitude;
 		var unitVecV = vectorV / magnitude;
 		//unit vector has magnitude of 1, so zPoint is + 1
-		var dirVectorHead = [xPoint + unitVecU, zPoint + 1, yPoint + unitVecV];
+		var dirVectorHead = [xPoint + unitVecU, zPoint, yPoint + unitVecV];
 		dirVectorData.set( "data", [dirVectorHead,vectorTail] );
 		
 		
