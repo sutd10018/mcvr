@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Curve</title>
+  <script src="js/libraries/mathbox-bundle.js"></script>
+  <script src="js/libraries/dat.gui.js"></script>
+  
+<!-- http://silentmatt.com/javascript-expression-evaluator/ -->
+<script src="js/libraries/parser.js"></script>
+
+  <link rel="stylesheet" href="css/mathbox.css">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1">
+   <style>
+	#bgcolor {
+		height: 97vh;
+		background: rgb(22,73,125);
+		background: linear-gradient(90deg, rgba(22,73,125,1) 0%, rgba(11,11,38,1) 50%, rgba(22,73,125,1) 100%);
+		align: center;
+	}
+</style>
+</head>
+<body>
+  <script>
+	
+	var element =  document.querySelector('#bgcolor'); //place the graph within custom Div
+	
+	var mathbox = mathBox({ 
+      plugins: ['VR', 'ui', 'controls'],
+      controls: {
+        klass: THREE.VRControls
+      },
+    });
+    if (mathbox.fallback) throw "WebGL not supported"
+	
+	var three = mathbox.three;
+    three.renderer.setClearColor(new THREE.Color(0x040430), 1.0);
+	
+	var xFunctionText = "cos(t)";
+	var yFunctionText = "sin(t)";
+	var zFunctionText = "t";
+	
+
+	var	xMin = -5, xMax = 5, yMin = -5,	yMax = 5, zMin = -5, zMax = 5;
+
+	// extrusion segments -- how many sample points to take along curve.
+	var segments = 128;
+
+
+	var tMin = 0, tMax = 6.28, tRange = tMax - tMin;
+	
+	var updateGraphFunc = function() 
+	{ 
+		var xFunc = Parser.parse( xFunctionText ).toJSFunction( ['t'] );
+		var yFunc = Parser.parse( yFunctionText ).toJSFunction( ['t'] );
+		var zFunc = Parser.parse( zFunctionText ).toJSFunction( ['t'] );
+		
+		curveDomain.set("range", [ [tMin, tMax] ]  );
+	
+		var dt = (tMax - tMin) / segments;
+		var epsilon = 0.000001;
+		
+		curveData.set("expr", 
+		    function (emit, t, i, time) 
+			{ 		
+				// head, then tail.
+				emit( xFunc(t), zFunc(t), yFunc(t) );
+				emit( xFunc(t - dt), zFunc(t - dt), yFunc(t - dt) );
+			}
+		);
+    
+    //axes
+    view.set("range", [[xMin, xMax], [zMin,zMax], [yMin, yMax]]);
+    
+    //integral
+    graphArray = [];
+    for(var i = tMin; i < tMax; i += 0.1)
+    {
+      x = xFunc(i);
+      y = yFunc(i);
+      z = zFunc(i);
+      
+      if(z > 0)
+      {
+        for(var j = z; j > 0; j -= 0.1)
+        {
+          graphArray.push([x, j, y])
+        }
+      }
+      else
+      {
+        for(var j = z; j < 0; j += 0.1)
+        {
+          graphArray.push([x, j, y])
+        }
+      }
+    }
+    graphData.set( "width", graphArray.length );
+    graphData.set( "data", graphArray );
+	}
+	// end of updateGraph function ==============================================================
+	
+	var updateGraph = function() { updateGraphFunc(); };
+	
+
+
+	// setting proxy:true allows interactive controls to override base position
+	var camera = mathbox.camera( { proxy: true, position: [4,2,4] } );
+	
+    var view = mathbox.cartesian(
+	  {
+        range: [[xMin, xMax], [yMin, yMax], [zMin,zMax]],
+		//scale for y axis - here in z, should be negative since original mathbox yAxis (on z) is flipped
+        scale: [2,1,-2],
+      }
+	);
+
+	
+	<!-- Axis settings -->
+	var xAxis = view.axis( {axis: 1, width: 8, detail: 40, color:"deeppink"} );
+    var xScale = view.scale( {axis: 1, divide: xMax, nice:true, zero:true} );
+    var xTicks = view.ticks( {width: 5, size: 15, color: "deeppink", zBias:2} );
+    var xFormat = view.format( {digits: 2, font:"Helvetica", style: "normal", source: xScale} );
+    var xTicksLabel = view.label( {color: "deeppink", zIndex: 0, offset:[0,-20], outline: 0, size: 14, points: xScale, text: xFormat} );
+	
+	var yAxis = view.axis( {axis: 3, width: 8, detail: 40, color:"greenyellow"} );
+    var yScale = view.scale( {axis: 3, divide: yMax, nice:true, zero:false} );
+    var yTicks = view.ticks( {width: 5, size: 15, color: "greenyellow", zBias:2} );
+    var yFormat = view.format( {digits: 2, font:"Helvetica", style: "normal", source: yScale} );
+    var yTicksLabel = view.label( {color: "greenyellow", zIndex: 0, offset:[-20,0], outline: 0, size: 14, points: yScale, text: yFormat} );
+	
+	var zAxis = view.axis( {axis: 2, width: 8, detail: 40, color:"cyan"} );
+    var zScale = view.scale( {axis: 2, divide: zMax, nice:true, zero:false} );
+    var zTicks = view.ticks( {width: 5, size: 15, color: "cyan", zBias:2} );
+    var zFormat = view.format( {digits: 2, font:"Helvetica", style: "normal", source: zScale} );
+    var zTicksLabel = view.label( {color: "cyan", zIndex: 0, offset:[20,0], outline: 0, size: 14, points: zScale, text: zFormat} );
+	
+	// axis end labels
+	var xLabelText = view.text( {width:1, data:["x"], font: "Helvetica", style: "normal"} );
+	var xLabelPoint = view.array( {width:1, channels:3, data:[ [xMax,0,0] ]} );
+	var xLabelDisplay = view.label( {text: xLabelText, points: xLabelPoint,
+      size: 18, color: "deeppink", outline: 0, offset: [20, 10], zIndex: 1} );
+	  
+	var yLabelText = view.text( {width:1, data:["y"], font: "Helvetica", style: "normal"} );
+	var yLabelPoint = view.array( {width:1, channels:3, data:[ [0,0,yMax] ]} );
+	var yLabelDisplay = view.label( {text: yLabelText, points: yLabelPoint,
+      size: 18, color: "greenyellow", outline: 0, offset: [-10, 20], zIndex: 1} );
+	
+	view.grid( {axes:[1,3], width: 2, divideX: 20, divideY: 20, opacity:0.25} );
+	
+	// need separate range for surface domain values. can't use values from view.
+	
+	
+	// curveData, curveView
+	
+	var curveDomain = mathbox.cartesian(
+	  {
+        range: [ [tMin,tMax] ] // t
+      }
+	);
+	
+	var curveData = curveDomain.interval({
+		width: segments,
+        expr: function (emit, t, i, time) 
+		{ 
+			var dt = (tMax - tMin) / segments;
+			// head, then tail.
+			emit( Math.cos(t), t, Math.sin(t) );
+			emit( Math.cos(t - dt), t - dt, Math.sin(t - dt) );
+		},
+        channels: 3,  // 3D space
+		items: 2,    // emit two vertices per line segment; required by view.
+
+    });
+	
+	var curveView = view.vector({
+		points: curveData, 
+		width: 10,
+        // expr: set later
+		color: "azure", start:false,
+        visible: true
+    });
+	
+	<!-- graph Color setting -->
+  var graphArray = [];
+  var graphVisible = true;
+	var graphData = view.array({
+		width: graphArray.length,
+		items: 1,    // two vertices per segment...
+		channels: 3, // graphed in 3D
+		data: graphArray,
+    });
+	
+	// actual emitter set in displayGraph function
+	var graphColors = view.area({
+		expr: function (emit, x,y, i,j, t) 
+		{
+			if (x < 0)
+				emit(1.0, 0.0, 0.0, 1.0);
+		    else
+				emit(0.0, 1.0, 0.0, 1.0);
+		},
+		axes: [1,3],
+		width:  64, height: 64,
+		channels: 4, // RGBA
+    });
+	
+	var graphViewSolid = view.surface({
+		points:graphData, 
+		color:"darkred", shaded:true, fill:true, lineX:true, lineY:true, visible:graphVisible, width:10
+	});
+	/*var graphViewSolid = view.line({
+		points: graphData, 
+		color:"darkred", width:10, start:true, visible:true
+	});*/
+	
+    // GUI controls
+	
+	var gui = new dat.GUI();
+	
+	var xFuncGUI = gui.add( this, 'xFunctionText' ).name('x = f(t) = ').onFinishChange(updateGraphFunc);
+	var yFuncGUI = gui.add( this, 'yFunctionText' ).name('y = g(t) = ').onFinishChange(updateGraphFunc);
+	var zFuncGUI = gui.add( this, 'zFunctionText' ).name('z = h(t) = ').onFinishChange(updateGraphFunc);
+	
+	var setDisplayFolder = gui.addFolder('Display setting');
+	
+	setDisplayFolder.add( this, 'xMin' ).name("xMin").onChange(updateGraphFunc);
+	setDisplayFolder.add( this, 'xMax' ).name("xMax").onChange(updateGraphFunc);
+	setDisplayFolder.add( this, 'yMin' ).name("yMin").onChange(updateGraphFunc);
+	setDisplayFolder.add( this, 'yMax' ).name("yMax").onChange(updateGraphFunc);
+	setDisplayFolder.add( this, 'zMin' ).name("zMin").onChange(updateGraphFunc);
+	setDisplayFolder.add( this, 'zMax' ).name("zMax").onChange(updateGraphFunc);
+  
+	var folder2 = gui.addFolder('Curve parameter (t) range');
+	var tMinGUI = folder2.add( this, 'tMin' ).onChange( updateGraphFunc );
+	var tMaxGUI = folder2.add( this, 'tMax' ).onChange( updateGraphFunc );
+	folder2.open();
+
+	var graphVisivleGUI = gui.add( this, "graphVisible" ).name("Integral").onChange( 
+		function()
+		{
+			graphViewSolid.set("visible", graphVisible);
+		}
+	 );
+	
+	
+	//gui.add( this, 'updateGraph' ).name("Update Graph");
+	
+	gui.open();
+	
+	updateGraph();
+	
+	</script>
+	
+</body>
+</html>
