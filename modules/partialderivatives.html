@@ -29,10 +29,20 @@
 	</style>
 </head>
 
+//Display in VR
+<html>
+  <head>
+    <script src="https://aframe.io/releases/1.1.0/aframe.min.js"></script>
+  </head>
+  <body>
+    <a-scene>
+      <a-box position="-1 0.5 -3" rotation="0 45 0" color="#4CC3D9"></a-box>
+    </a-scene>
+  </body>
+</html>
 
 <body>
 <div id="bgcolor">
-
   <script>
  
 	<!-- START OF SCENE SETUP ==================================================================== -->
@@ -134,7 +144,7 @@
 	// to display the basic graph
 	 
 	var functionText = "x^2+(2*x*y) + y^2"; // the function to parse
-	
+
   var zAutofit = false;
 	
 	<!-- END OF DISPLAY GRAPH SETTING ===================================================== -->
@@ -143,6 +153,7 @@
    <!-- START OF DISPLAY DERIVATIVES SETTING ===================================================== -->
 
 	var xPoint = 0, yPoint = 0, zPoint;
+
   
 	// plot a point on the graph.
 	

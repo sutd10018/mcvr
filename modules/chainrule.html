@@ -248,6 +248,8 @@
 	var dfDerivTextView = view.label( {text: dfDerivText, points: dfVectorData,
       size: 12, color: "orange", outline: 0, offset: [30,20], zIndex: 1, visible: dfVectorVisible} );
 	
+	const position = new THREE.Vector3();
+	position.setFromMatrixPosition( camera.matrixWorld );
 	
 	<!-- END OF DISPLAY DERIVATIVES ===================================================== -->
 	
